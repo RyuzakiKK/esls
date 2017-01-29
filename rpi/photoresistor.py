@@ -1,24 +1,32 @@
 from random import randint
-from threading import Thread
+import threading
 import time
 import pykka
+# import smbus
 
 
 class Photoresistor(pykka.ThreadingActor):
     def __init__(self):
         super(Photoresistor, self).__init__()
-        self._pin = 1
+        bus_number = 1
+        self.address_TSL2561 = 0x49
+        self.start = 0x51
+        # self.i2cBus = smbus.SMBus(bus_number)
+        # self.i2cBus.write_byte_data(self.address_TSL2561, 0x80, 0x03)
+        self.cv = threading.Condition()
         self._listActors = []
-        t = Thread(target=self.start_measuring)
+        t = threading.Thread(target=self.start_measuring)
         t.daemon = True
         t.start()
 
     def add_actor(self, actor_ref):
-        self._listActors.append(actor_ref)
+        with self.cv:
+            self._listActors.append(actor_ref)
         print("I added an actor")
 
     def remove_actor(self, actor_ref):
-        self._listActors.remove(actor_ref)
+        with self.cv:
+            self._listActors.remove(actor_ref)
 
     def start_measuring(self):
         while True:
@@ -30,3 +38,28 @@ class Photoresistor(pykka.ThreadingActor):
                     actor.update_light(current_intensity)
                 time.sleep(10)
             time.sleep(10)
+
+    # def measure(self):
+    #     atmosphere_low_byte = self.i2cBus.read_byte_data(self.address_TSL2561, 0x8c)
+    #     atmosphere_high_byte = self.i2cBus.read_byte_data(self.address_TSL2561, 0x8d)
+    #     atmosphere = (atmosphere_high_byte * 256) + atmosphere_low_byte
+    #     print("Atmosphere {0}".format(atmosphere))
+    #     ir_low_byte = self.i2cBus.read_byte_data(self.address_TSL2561, 0x8e)
+    #     ir_high_byte = self.i2cBus.read_byte_data(self.address_TSL2561, 0x8f)
+    #     ir = (ir_high_byte * 256) + ir_low_byte
+    #     print("IR %d" % ir)
+    #     # Berechnen des Faktors IR/Ambiente
+    #     ratio = ir / float(atmosphere)
+    #     print("Ratio {0}".format(ratio))
+    #     # Berechnung lt. Datenblatt TSL2561T
+    #     if 0 < ratio <= 0.50:
+    #         lux = 0.0304 * atmosphere - 0.062 * atmosphere * (ratio ** 1.4)
+    #     elif 0.50 < ratio <= 0.61:
+    #         lux = 0.0224 * atmosphere - 0.031 * ir
+    #     elif 0.61 < ratio <= 0.80:
+    #         lux = 0.0128 * atmosphere - 0.0153 * ir
+    #     elif 0.80 < ratio <= 1.3:
+    #         lux = 0.00146 * atmosphere - 0.00112 * ir
+    #     else:
+    #         lux = 0
+    #     print("Lux = {0}".format(lux))

@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 import json
 import threading
 import pykka
+import ledPWM
 
 '''
 on: time_h=19 photoresistor=50
@@ -22,14 +23,18 @@ time_h=6 photoresistor=60 -> switch off
 
 
 class Lamp(pykka.ThreadingActor):
-    def __init__(self, lamp_id, pr_proxy, us_proxy, lamp_policy_on=None, lamp_policy_off=None, lamp_energy=None):
+    def __init__(self, lamp_id, lamp_number, pin, pr_proxy, us_proxy_1, us_proxy_2, lamp_policy_on=None,
+                 lamp_policy_off=None, lamp_energy=None):
         super(Lamp, self).__init__()
         self.lamp_id = lamp_id
+        self.lamp_number = lamp_number
+        self.pin = pin
         self.lamp_policy_on = lamp_policy_on
         self.lamp_policy_off = lamp_policy_off
         self.lamp_energy = lamp_energy
         self.timer_on = threading.Timer(0, None)
-        self.timer_energy_on = threading.Timer(0, None)
+        self.timer_energy_on_1 = threading.Timer(0, None)
+        self.timer_energy_on_2 = threading.Timer(0, None)
         self.timer_energy_timeout = threading.Timer(0, None)
         self.my_proxy = None
         self.start_time_on = None
@@ -37,9 +42,10 @@ class Lamp(pykka.ThreadingActor):
         self.timeout_on_off = 0
         self.timeout_energy = 0
         self.on = False
-        pass  # set off
+        ledPWM.set_led_intensity(self.pin, 0)
         self.pr_proxy = pr_proxy
-        self.us_proxy = us_proxy
+        self.us_proxy_1 = us_proxy_1
+        self.us_proxy_2 = us_proxy_2
 
     def set_self_proxy(self, lamp_proxy):
         self.my_proxy = lamp_proxy
@@ -63,20 +69,22 @@ class Lamp(pykka.ThreadingActor):
         today = datetime.today()
         wait_t = self.get_delta(today.hour, today.minute, today.second, self.lamp_energy.time_h_on,
                                 self.lamp_energy.time_m_on, 0)
-        self.timer_energy_on.cancel()
-        self.timer_energy_on = threading.Timer(wait_t, self.us_proxy.add_actor, [self.my_proxy])
-        self.timer_energy_on.start()
+        self.timer_energy_on_1.cancel()
+        self.timer_energy_on_1 = threading.Timer(wait_t, self.us_proxy_1.add_actor, [self.my_proxy])
+        self.timer_energy_on_1.start()
+        self.timer_energy_on_2.cancel()
+        self.timer_energy_on_2 = threading.Timer(wait_t, self.us_proxy_2.add_actor, [self.my_proxy])
+        self.timer_energy_on_2.start()
         self.start_time_energy_on = datetime.today() + timedelta(seconds=wait_t)
 
     def update_light(self, current_intensity):
-        print(threading.get_ident())
         if self.is_in_schedule():
             if self.on and current_intensity > self.lamp_policy_off.photoresistor:
-                pass  # set off
+                ledPWM.set_led_intensity(self.pin, 0)
                 print("lamp off")
                 self.on = False
             elif not self.on and current_intensity < self.lamp_policy_on.photoresistor:
-                pass  # set on
+                ledPWM.set_led_intensity(self.pin, self.lamp_policy_on.intensity)
                 print("lamp on")
                 self.on = True
         else:
@@ -84,20 +92,27 @@ class Lamp(pykka.ThreadingActor):
             self.pr_proxy.remove_actor(self.my_proxy)
             self.start_schedule_on()
 
-    def ultrasonic_notify(self, us_timeout):
-        print(threading.get_ident())
+    def ultrasonic_notify(self, us_timeout, wait_time, right_lane):
         if self.is_in_schedule() and self.is_energy_saving_time():
-            self.timer_energy_timeout.cancel()
-            pass  # set on lamp_policy_on.intensity
-            print("There is a car! Lamp full power")
-            # TODO dim the light to the lamp_energy.intensity value
-            self.timer_energy_timeout.cancel()
-            self.timer_energy_timeout = threading.Timer(us_timeout, print, ["Everything is quiet, dim the light!"])
-            self.timer_energy_timeout.start()
+            if self.on:
+                # If the lamp is off because of the photoresistor, even if there is a car the lamp stay off
+                self.timer_energy_timeout.cancel()
+                if right_lane:
+                    position = self.lamp_id
+                else:
+                    position = self.lamp_number - self.lamp_id
+                threading.Timer(wait_time*position, ledPWM.set_led_intensity, [self.pin, self.lamp_policy_on.intensity])
+                # ledPWM.set_led_intensity(self.pin, self.lamp_policy_on.intensity)
+                print("There is a car! Lamp full power")
+                self.timer_energy_timeout.cancel()
+                self.timer_energy_timeout = threading.Timer(us_timeout + wait_time * position, ledPWM.set_led_intensity,
+                                                            [self.pin, self.lamp_energy.intensity])
+                self.timer_energy_timeout.start()
         else:
             self.timer_energy_timeout.cancel()
             print("schedule is over, see you tomorrow")
-            self.us_proxy.remove_actor(self.my_proxy)
+            self.us_proxy_1.remove_actor(self.my_proxy)
+            self.us_proxy_2.remove_actor(self.my_proxy)
             self.start_schedule_energy_on()
 
     def to_json(self):

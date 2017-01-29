@@ -1,6 +1,7 @@
 import pickle
 import configparser
 import threading
+import os.path
 
 from flask import Flask, jsonify, abort, make_response, request
 from flask_httpauth import HTTPBasicAuth
@@ -25,15 +26,14 @@ time_h_off = "time_h_off"
 time_m_off = "time_m_off"
 photoresistor = "photoresistor"
 path_lights = "lights/light"
-extension = ".pkl"
+extension = ".cfg"
 user = ""
 password = ""
 cv = threading.Condition()
 lock = threading.Lock()
 readers = 0
 want_to_write = 0
-
-# TODO number of lights is pre-defined and not editable
+lamp_number = 0
 
 
 @auth.get_password
@@ -73,7 +73,7 @@ def get_lamp_policies(lamp_id):
     if lamp_id < len(lights):
         future = lights[lamp_id].to_json()
         try:
-            ret_val = future.get(timeout=0.8), 201
+            ret_val = future.get(timeout=0.2), 201
         except Exception:
             error = True
             error_number = 500
@@ -103,27 +103,25 @@ def set_lamp_policy_on(lamp_id):
         while readers > 0:
             cv.wait()
         want_to_write -= 1
-        if lamp_id < len(lights) and sanity_check(request.json):
-            policy_off_future = lights[lamp_id].lamp_policy_off
-            lamp_energy_future = lights[lamp_id].lamp_energy
+        global lamp_number
+        if lamp_id < lamp_number and sanity_check(request.json):
             if intensity in request.json:
-                policy_on = LampPolicy(int(request.json[intensity]), int(request.json[time_h]),
-                                       int(request.json[time_m]), int(request.json[photoresistor]))
+                new_intensity = int(request.json[intensity])
             else:
-                policy_on = LampPolicy(100, int(request.json[time_h]), int(request.json[time_m]),
-                                       int(request.json[photoresistor]))
+                new_intensity = 100
+            policy_on = LampPolicy(new_intensity, int(request.json[time_h]), int(request.json[time_m]),
+                                   int(request.json[photoresistor]))
             lights[lamp_id].lamp_policy_on = policy_on
             lights[lamp_id].update_schedules()
             lights[lamp_id].start_schedule_on()
-            policy_off = None
-            lamp_energy = None
-            try:
-                policy_off = policy_off_future.get(timeout=0.8)
-                lamp_energy = lamp_energy_future.get(timeout=0.8)
-            except Exception:
-                abort(500)
-            save_object(Lamp(lamp_id, None, None, policy_on, policy_off, lamp_energy),
-                        path_lights + str(lamp_id) + extension)
+            config = configparser.ConfigParser()
+            config.read(path_lights + str(lamp_id) + extension)
+            config['LampPolicyOn'][intensity] = new_intensity
+            config['LampPolicyOn'][time_h] = int(request.json[time_h])
+            config['LampPolicyOn'][time_m] = int(request.json[time_m])
+            config['LampPolicyOn'][photoresistor] = int(request.json[photoresistor])
+            with open(path_lights + str(lamp_id) + extension, 'w') as configfile:
+                config.write(configfile)
             return jsonify({"result": "ok"}), 201
         else:
             abort(400)
@@ -141,22 +139,21 @@ def set_lamp_policy_off(lamp_id):
         while readers > 0:
             cv.wait()
         want_to_write -= 1
-        if lamp_id < len(lights) and sanity_check(request.json):
-            policy_on_future = lights[lamp_id].lamp_policy_on
-            lamp_energy_future = lights[lamp_id].lamp_energy
+        global lamp_number
+        if lamp_id < lamp_number and sanity_check(request.json):
             policy_off = LampPolicy(0, int(request.json[time_h]), int(request.json[time_m]),
                                     int(request.json[photoresistor]))
             lights[lamp_id].lamp_policy_off = policy_off
             lights[lamp_id].update_schedules()
             lights[lamp_id].start_schedule_on()
-            policy_on = None
-            lamp_energy = None
-            try:
-                policy_on = policy_on_future.get(timeout=0.8)
-                lamp_energy = lamp_energy_future.get(timeout=0.8)
-            except Exception:
-                abort(500)
-            save_object(Lamp(lamp_id, None, None, policy_on, policy_off, lamp_energy), path_lights + str(lamp_id) + extension)
+            config = configparser.ConfigParser()
+            config.read(path_lights + str(lamp_id) + extension)
+            config['LampPolicyOff'][intensity] = 0
+            config['LampPolicyOff'][time_h] = int(request.json[time_h])
+            config['LampPolicyOff'][time_m] = int(request.json[time_m])
+            config['LampPolicyOff'][photoresistor] = int(request.json[photoresistor])
+            with open(path_lights + str(lamp_id) + extension, 'w') as configfile:
+                config.write(configfile)
             return jsonify({"result": "ok"}), 201
         abort(400)
 
@@ -173,23 +170,23 @@ def set_energy_saving(lamp_id):
         while readers > 0:
             cv.wait()
         want_to_write -= 1
-        if lamp_id < len(lights) and sanity_check(request.json):
-            policy_on_future = lights[lamp_id].lamp_policy_on
-            policy_off_future = lights[lamp_id].lamp_policy_off
+        global lamp_number
+        if lamp_id < lamp_number and sanity_check(request.json):
             lamp_energy = LampEnergySaving(int(request.json[intensity]), int(request.json[time_h_on]),
                                            int(request.json[time_m_on]), int(request.json[time_h_off]),
                                            int(request.json[time_m_off]))
             lights[lamp_id].lamp_energy = lamp_energy
             lights[lamp_id].update_schedules()
             lights[lamp_id].start_schedule_energy_on()
-            policy_on = None
-            policy_off = None
-            try:
-                policy_on = policy_on_future.get(timeout=0.8)
-                policy_off = policy_off_future.get(timeout=0.8)
-            except Exception:
-                abort(500)
-            save_object(Lamp(lamp_id, None, None, policy_on, policy_off, lamp_energy), path_lights + str(lamp_id) + extension)
+            config = configparser.ConfigParser()
+            config.read(path_lights + str(lamp_id) + extension)
+            config['LampEnergySaving'][intensity] = int(request.json[intensity])
+            config['LampEnergySaving'][time_h_on] = int(request.json[time_h_on])
+            config['LampEnergySaving'][time_m_on] = int(request.json[time_m_on])
+            config['LampEnergySaving'][time_h_off] = int(request.json[time_h_off])
+            config['LampEnergySaving'][time_m_off] = int(request.json[time_m_off])
+            with open(path_lights + str(lamp_id) + extension, 'w') as configfile:
+                config.write(configfile)
             return jsonify({"result": "ok"}), 201
         abort(400)
 
@@ -235,37 +232,56 @@ def load_object(filename):
         return pickle.load(input_file)
 
 
+def load_lights_ini(pr_proxy, us_proxy_1, us_proxy_2):
+    config = configparser.ConfigParser()
+    global lamp_number
+    lamp_number = 0
+    still_reading = True
+    while still_reading:
+        if os.path.isfile(path_lights + str(lamp_number) + extension):
+            lamp_number += 1
+        else:
+            still_reading = False
+    for i in range(lamp_number):
+        config.read(path_lights + str(i) + extension)
+        lamp_id = config['GENERAL']['lamp_id']
+        lamp_pin = config['GENERAL']['lamp_pin']
+        pl_intensity_on = config['LampPolicyOn'][intensity]
+        pl_time_h_on = config['LampPolicyOn'][time_h]
+        pl_time_m_on = config['LampPolicyOn'][time_m]
+        pl_photoresistor_on = config['LampPolicyOn'][photoresistor]
+        pl_intensity_off = config['LampPolicyOff'][intensity]
+        pl_time_h_off = config['LampPolicyOff'][time_h]
+        pl_time_m_off = config['LampPolicyOff'][time_m]
+        pl_photoresistor_off = config['LampPolicyOff'][photoresistor]
+        en_intensity = config['LampEnergySaving'][intensity]
+        en_time_h_on = config['LampEnergySaving'][time_h_on]
+        en_time_m_on = config['LampEnergySaving'][time_m_on]
+        en_time_h_off = config['LampEnergySaving'][time_h_off]
+        en_time_m_off = config['LampEnergySaving'][time_m_off]
+        lamp_policy_on = LampPolicy(pl_intensity_on, pl_time_h_on, pl_time_m_on, pl_photoresistor_on)
+        lamp_policy_off = LampPolicy(pl_intensity_off, pl_time_h_off, pl_time_m_off, pl_photoresistor_off)
+        lamp_energy = LampEnergySaving(en_intensity, en_time_h_on, en_time_m_on, en_time_h_off, en_time_m_off)
+        lamp_proxy = Lamp.start(lamp_id, lamp_number, lamp_pin, pr_proxy, us_proxy_1, us_proxy_2, lamp_policy_on,
+                                lamp_policy_off, lamp_energy).proxy()
+        lamp_proxy.set_self_proxy(lamp_proxy)
+        lamp_proxy.update_schedules()
+        lamp_proxy.start_schedule_on()
+        lamp_proxy.start_schedule_energy_on()
+        lights.append(lamp_proxy)
+
+
 def main():
     pr_proxy = Photoresistor.start().proxy()
-    us_proxy = Ultrasonic.start().proxy()
+    us_proxy_1 = Ultrasonic.start(1, 2, True, 1).proxy()
+    us_proxy_2 = Ultrasonic.start(1, 2, False, 1).proxy()
     config = configparser.ConfigParser()
-    config.read("config.cfg")
+    config.read("config" + extension)
     global user
     user = config['DEFAULT']['User']
     global password
     password = config['DEFAULT']['Pass']
-
-    # save_object(
-    #     Lamp(0, None, None, LampPolicy(100, 11, 46, 50), LampPolicy(0, 5, 30, 50), LampEnergySaving(60, 1, 0, 5, 30)),
-    #     path_lights + str(0) + extension)
-    # save_object(
-    #     Lamp(1, None, None, LampPolicy(100, 11, 46, 50), LampPolicy(0, 5, 30, 50), LampEnergySaving(60, 1, 0, 5, 30)),
-    #     path_lights + str(1) + extension)
-    # save_object(
-    #     Lamp(2, None, None, LampPolicy(100, 19, 0, 50), LampPolicy(0, 5, 30, 50), LampEnergySaving(60, 1, 0, 5, 30)),
-    #     path_lights + str(2) + extension)
-
-    try:
-        for i in range(10):  # TODO number of lights and initialization
-            lamp = load_object(path_lights + str(i) + extension)
-            lamp_proxy = Lamp.start(lamp[0], pr_proxy, us_proxy, lamp[1], lamp[2], lamp[3]).proxy()
-            lamp_proxy.set_self_proxy(lamp_proxy)
-            lamp_proxy.update_schedules()
-            lamp_proxy.start_schedule_on()
-            lamp_proxy.start_schedule_energy_on()
-            lights.append(lamp_proxy)
-    except FileNotFoundError:
-        pass
+    load_lights_ini(pr_proxy, us_proxy_1, us_proxy_2)
 
 
 if __name__ == '__main__':
