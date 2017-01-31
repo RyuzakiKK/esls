@@ -42,6 +42,7 @@ class Lamp(pykka.ThreadingActor):
         self.timeout_on_off = 0
         self.timeout_energy = 0
         self.on = False
+        self.debug = False
         ledPWM.set_led_intensity(self.pin, 0)
         self.pr_proxy = pr_proxy
         self.us_proxy_1 = us_proxy_1
@@ -77,43 +78,45 @@ class Lamp(pykka.ThreadingActor):
         self.timer_energy_on_2.start()
         self.start_time_energy_on = datetime.today() + timedelta(seconds=wait_t)
 
-    def update_light(self, current_intensity):
-        if self.is_in_schedule():
-            if self.on and current_intensity > self.lamp_policy_off.photoresistor:
-                ledPWM.set_led_intensity(self.pin, 0)
-                print("lamp off")
-                self.on = False
-            elif not self.on and current_intensity < self.lamp_policy_on.photoresistor:
-                ledPWM.set_led_intensity(self.pin, self.lamp_policy_on.intensity)
-                print("lamp on")
-                self.on = True
-        else:
-            print("schedule is over, see you tomorrow")
-            self.pr_proxy.remove_actor(self.my_proxy)
-            self.start_schedule_on()
+    def update_light(self, current_intensity):  # TODO check energy saving time
+        if not self.debug:
+            if self.is_in_schedule():
+                if self.on and current_intensity > self.lamp_policy_off.photoresistor:
+                    ledPWM.set_led_intensity(self.pin, 0)
+                    print("lamp off")
+                    self.on = False
+                elif not self.on and current_intensity < self.lamp_policy_on.photoresistor:
+                    ledPWM.set_led_intensity(self.pin, self.lamp_policy_on.intensity)
+                    print("lamp on")
+                    self.on = True
+            else:
+                print("schedule is over, see you tomorrow")
+                self.pr_proxy.remove_actor(self.my_proxy)
+                self.start_schedule_on()
 
     def ultrasonic_notify(self, us_timeout, wait_time, right_lane):
-        if self.is_in_schedule() and self.is_energy_saving_time():
-            if self.on:
-                # If the lamp is off because of the photoresistor, even if there is a car the lamp stay off
+        if not self.debug:
+            if self.is_in_schedule() and self.is_energy_saving_time():
+                if self.on:
+                    # If the lamp is off because of the photoresistor, even if there is a car the lamp stay off
+                    self.timer_energy_timeout.cancel()
+                    if right_lane:
+                        position = self.lamp_id
+                    else:
+                        position = self.lamp_number - self.lamp_id
+                    threading.Timer(wait_time*position, ledPWM.set_led_intensity, [self.pin, self.lamp_policy_on.intensity])
+                    # ledPWM.set_led_intensity(self.pin, self.lamp_policy_on.intensity)
+                    print("There is a car! Lamp full power")
+                    self.timer_energy_timeout.cancel()
+                    self.timer_energy_timeout = threading.Timer(us_timeout + wait_time * position, ledPWM.set_led_intensity,
+                                                                [self.pin, self.lamp_energy.intensity])
+                    self.timer_energy_timeout.start()
+            else:
                 self.timer_energy_timeout.cancel()
-                if right_lane:
-                    position = self.lamp_id
-                else:
-                    position = self.lamp_number - self.lamp_id
-                threading.Timer(wait_time*position, ledPWM.set_led_intensity, [self.pin, self.lamp_policy_on.intensity])
-                # ledPWM.set_led_intensity(self.pin, self.lamp_policy_on.intensity)
-                print("There is a car! Lamp full power")
-                self.timer_energy_timeout.cancel()
-                self.timer_energy_timeout = threading.Timer(us_timeout + wait_time * position, ledPWM.set_led_intensity,
-                                                            [self.pin, self.lamp_energy.intensity])
-                self.timer_energy_timeout.start()
-        else:
-            self.timer_energy_timeout.cancel()
-            print("schedule is over, see you tomorrow")
-            self.us_proxy_1.remove_actor(self.my_proxy)
-            self.us_proxy_2.remove_actor(self.my_proxy)
-            self.start_schedule_energy_on()
+                print("schedule is over, see you tomorrow")
+                self.us_proxy_1.remove_actor(self.my_proxy)
+                self.us_proxy_2.remove_actor(self.my_proxy)
+                self.start_schedule_energy_on()
 
     def to_json(self):
         return json.dumps([self.lamp_id, self.lamp_policy_on, self.lamp_policy_off, self.lamp_energy],

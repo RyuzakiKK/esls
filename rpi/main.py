@@ -1,3 +1,4 @@
+from datetime import datetime
 import pickle
 import configparser
 import threading
@@ -6,6 +7,7 @@ import os.path
 from flask import Flask, jsonify, abort, make_response, request
 from flask_httpauth import HTTPBasicAuth
 
+import ledPWM
 from lamp import Lamp
 from lampEnergySaving import LampEnergySaving
 from lampPolicy import LampPolicy
@@ -17,16 +19,19 @@ auth = HTTPBasicAuth()
 
 lights = []
 version = "v0.1"
-intensity = "intensity"
-time_h = "time_h"
-time_m = "time_m"
-time_h_on = "time_h_on"
-time_m_on = "time_m_on"
-time_h_off = "time_h_off"
-time_m_off = "time_m_off"
-photoresistor = "photoresistor"
-path_lights = "lights/light"
-extension = ".cfg"
+INTENSITY = "intensity"
+TIME_H = "time_h"
+TIME_M = "time_m"
+TIME_H_ON = "time_h_on"
+TIME_M_ON = "time_m_on"
+TIME_H_OFF = "time_h_off"
+TIME_M_OFF = "time_m_off"
+PHOTORESISTOR = "photoresistor"
+LAMP_POLICY_ON = "LampPolicyOn"
+LAMP_POLICY_OFF = "LampPolicyOff"
+LAMP_ENERGY_SAVING = "LampEnergySaving"
+PATH_LIGHTS = "lights/light"
+EXTENSION = ".cfg"
 user = ""
 password = ""
 cv = threading.Condition()
@@ -34,6 +39,7 @@ lock = threading.Lock()
 readers = 0
 want_to_write = 0
 lamp_number = 0
+old_intensity = {}
 
 
 @auth.get_password
@@ -98,33 +104,36 @@ def set_lamp_policy_on(lamp_id):
     global want_to_write
     if not request.json:
         abort(400)
-    with cv:
-        want_to_write += 1
-        while readers > 0:
-            cv.wait()
-        want_to_write -= 1
-        global lamp_number
-        if lamp_id < lamp_number and sanity_check(request.json):
-            if intensity in request.json:
-                new_intensity = int(request.json[intensity])
+    try:
+        new_intensity = int(request.json[INTENSITY]) if INTENSITY in request.json else 100
+        new_h_on = int(request.json[TIME_H])
+        new_m_on = int(request.json[TIME_M])
+        new_photoresistor = int(request.json[PHOTORESISTOR])
+        with cv:
+            want_to_write += 1
+            while readers > 0:
+                cv.wait()
+            want_to_write -= 1
+            global lamp_number
+            if lamp_id < lamp_number and sanity_check(lamp_id, pl_intensity_on=new_intensity, pl_time_h_on=new_h_on,
+                                                      pl_time_m_off=new_m_on, photoresistor_on=new_photoresistor):
+                policy_on = LampPolicy(new_intensity, new_h_on, new_m_on, new_photoresistor)
+                lights[lamp_id].lamp_policy_on = policy_on
+                lights[lamp_id].update_schedules()
+                lights[lamp_id].start_schedule_on()
+                config = configparser.ConfigParser()
+                config.read(PATH_LIGHTS + str(lamp_id) + EXTENSION)
+                config[LAMP_POLICY_ON][INTENSITY] = str(new_intensity)
+                config[LAMP_POLICY_ON][TIME_H] = str(new_h_on)
+                config[LAMP_POLICY_ON][TIME_M] = str(new_m_on)
+                config[LAMP_POLICY_ON][PHOTORESISTOR] = str(new_photoresistor)
+                with open(PATH_LIGHTS + str(lamp_id) + EXTENSION, 'w') as configfile:
+                    config.write(configfile)
+                return jsonify({"result": "ok"}), 201
             else:
-                new_intensity = 100
-            policy_on = LampPolicy(new_intensity, int(request.json[time_h]), int(request.json[time_m]),
-                                   int(request.json[photoresistor]))
-            lights[lamp_id].lamp_policy_on = policy_on
-            lights[lamp_id].update_schedules()
-            lights[lamp_id].start_schedule_on()
-            config = configparser.ConfigParser()
-            config.read(path_lights + str(lamp_id) + extension)
-            config['LampPolicyOn'][intensity] = new_intensity
-            config['LampPolicyOn'][time_h] = int(request.json[time_h])
-            config['LampPolicyOn'][time_m] = int(request.json[time_m])
-            config['LampPolicyOn'][photoresistor] = int(request.json[photoresistor])
-            with open(path_lights + str(lamp_id) + extension, 'w') as configfile:
-                config.write(configfile)
-            return jsonify({"result": "ok"}), 201
-        else:
-            abort(400)
+                abort(400)
+    except KeyError:
+        abort(400)
 
 
 @app.route("/esls/api/" + version + "/policies/lamp/<int:lamp_id>/off", methods=['POST'])
@@ -134,27 +143,33 @@ def set_lamp_policy_off(lamp_id):
     global want_to_write
     if not request.json:
         abort(400)
-    with cv:
-        want_to_write += 1
-        while readers > 0:
-            cv.wait()
-        want_to_write -= 1
-        global lamp_number
-        if lamp_id < lamp_number and sanity_check(request.json):
-            policy_off = LampPolicy(0, int(request.json[time_h]), int(request.json[time_m]),
-                                    int(request.json[photoresistor]))
-            lights[lamp_id].lamp_policy_off = policy_off
-            lights[lamp_id].update_schedules()
-            lights[lamp_id].start_schedule_on()
-            config = configparser.ConfigParser()
-            config.read(path_lights + str(lamp_id) + extension)
-            config['LampPolicyOff'][intensity] = 0
-            config['LampPolicyOff'][time_h] = int(request.json[time_h])
-            config['LampPolicyOff'][time_m] = int(request.json[time_m])
-            config['LampPolicyOff'][photoresistor] = int(request.json[photoresistor])
-            with open(path_lights + str(lamp_id) + extension, 'w') as configfile:
-                config.write(configfile)
-            return jsonify({"result": "ok"}), 201
+    try:
+        new_h_off = int(request.json[TIME_H])
+        new_m_off = int(request.json[TIME_M])
+        new_photoresistor = int(request.json[PHOTORESISTOR])
+        with cv:
+            want_to_write += 1
+            while readers > 0:
+                cv.wait()
+            want_to_write -= 1
+            global lamp_number
+            if lamp_id < lamp_number and sanity_check(lamp_id, pl_time_h_off=new_h_off, pl_time_m_off=new_m_off,
+                                                      photoresistor_off=new_photoresistor):
+                policy_off = LampPolicy(0, new_h_off, new_m_off, new_photoresistor)
+                lights[lamp_id].lamp_policy_off = policy_off
+                lights[lamp_id].update_schedules()
+                lights[lamp_id].start_schedule_on()
+                config = configparser.ConfigParser()
+                config.read(PATH_LIGHTS + str(lamp_id) + EXTENSION)
+                config[LAMP_POLICY_OFF][INTENSITY] = '0'
+                config[LAMP_POLICY_OFF][TIME_H] = str(new_h_off)
+                config[LAMP_POLICY_OFF][TIME_M] = str(new_m_off)
+                config[LAMP_POLICY_OFF][PHOTORESISTOR] = str(new_photoresistor)
+                with open(PATH_LIGHTS + str(lamp_id) + EXTENSION, 'w') as configfile:
+                    config.write(configfile)
+                return jsonify({"result": "ok"}), 201
+            abort(400)
+    except KeyError:
         abort(400)
 
 
@@ -165,59 +180,190 @@ def set_energy_saving(lamp_id):
     global want_to_write
     if not request.json:
         abort(400)
-    with cv:
-        want_to_write += 1
-        while readers > 0:
-            cv.wait()
-        want_to_write -= 1
-        global lamp_number
-        if lamp_id < lamp_number and sanity_check(request.json):
-            lamp_energy = LampEnergySaving(int(request.json[intensity]), int(request.json[time_h_on]),
-                                           int(request.json[time_m_on]), int(request.json[time_h_off]),
-                                           int(request.json[time_m_off]))
-            lights[lamp_id].lamp_energy = lamp_energy
-            lights[lamp_id].update_schedules()
-            lights[lamp_id].start_schedule_energy_on()
-            config = configparser.ConfigParser()
-            config.read(path_lights + str(lamp_id) + extension)
-            config['LampEnergySaving'][intensity] = int(request.json[intensity])
-            config['LampEnergySaving'][time_h_on] = int(request.json[time_h_on])
-            config['LampEnergySaving'][time_m_on] = int(request.json[time_m_on])
-            config['LampEnergySaving'][time_h_off] = int(request.json[time_h_off])
-            config['LampEnergySaving'][time_m_off] = int(request.json[time_m_off])
-            with open(path_lights + str(lamp_id) + extension, 'w') as configfile:
-                config.write(configfile)
-            return jsonify({"result": "ok"}), 201
+    try:
+        new_intensity = int(request.json[INTENSITY])
+        new_h_on = int(request.json[TIME_H_ON])
+        new_m_on = int(request.json[TIME_M_ON])
+        new_h_off = int(request.json[TIME_H_OFF])
+        new_m_off = int(request.json[TIME_M_OFF])
+        with cv:
+            want_to_write += 1
+            while readers > 0:
+                cv.wait()
+            want_to_write -= 1
+            global lamp_number
+            if lamp_id < lamp_number and sanity_check(lamp_id, en_intensity=new_intensity, en_time_h_on=new_h_on,
+                                                      en_time_m_on=new_m_on, en_time_h_off=new_h_off,
+                                                      en_time_m_off=new_m_off):
+                lamp_energy = LampEnergySaving(new_intensity, new_h_on, new_m_on, new_h_off, new_m_off)
+                lights[lamp_id].lamp_energy = lamp_energy
+                lights[lamp_id].update_schedules()
+                lights[lamp_id].start_schedule_energy_on()
+                config = configparser.ConfigParser()
+                config.read(PATH_LIGHTS + str(lamp_id) + EXTENSION)
+                config[LAMP_ENERGY_SAVING][INTENSITY] = str(new_intensity)
+                config[LAMP_ENERGY_SAVING][TIME_H_ON] = str(new_h_on)
+                config[LAMP_ENERGY_SAVING][TIME_M_ON] = str(new_m_on)
+                config[LAMP_ENERGY_SAVING][TIME_H_OFF] = str(new_h_off)
+                config[LAMP_ENERGY_SAVING][TIME_M_OFF] = str(new_m_off)
+                with open(PATH_LIGHTS + str(lamp_id) + EXTENSION, 'w') as configfile:
+                    config.write(configfile)
+                return jsonify({"result": "ok"}), 201
+            abort(400)
+    except KeyError:
         abort(400)
 
 
-def sanity_check(reqjs):
-    try:
-        if intensity in reqjs and (int(reqjs[intensity]) < 0 or int(reqjs[intensity]) > 100):
-            return False
-        elif time_h in reqjs and time_m in reqjs and photoresistor in reqjs:
-            if int(reqjs[time_h]) < 0 or int(reqjs[time_h]) > 23:
-                return False
-            elif int(reqjs[time_m]) < 0 or int(reqjs[time_m]) > 59:
-                return False
-            elif int(reqjs[photoresistor]) < 0 or int(reqjs[photoresistor]) > 200:
-                return False
-            else:
-                return True
-        elif time_h_on in reqjs and time_m_on in reqjs and time_h_off in reqjs and time_m_off in reqjs:
-            if int(reqjs[time_h_on]) < 0 or int(reqjs[time_h_on]) > 23:
-                return False
-            elif int(reqjs[time_m_on]) < 0 or int(reqjs[time_m_on]) > 59:
-                return False
-            elif int(reqjs[time_h_off]) < 0 or int(reqjs[time_h_off]) > 23:
-                return False
-            elif int(reqjs[time_m_off]) < 0 or int(reqjs[time_m_off]) > 59:
-                return False
-            else:
-                return True
+# def sanity_check(reqjs):
+#     try:
+#         if intensity in reqjs and (int(reqjs[intensity]) < 0 or int(reqjs[intensity]) > 100):
+#             return False
+#         elif time_h in reqjs and time_m in reqjs and photoresistor in reqjs:
+#             if int(reqjs[time_h]) < 0 or int(reqjs[time_h]) > 23:
+#                 return False
+#             elif int(reqjs[time_m]) < 0 or int(reqjs[time_m]) > 59:
+#                 return False
+#             elif int(reqjs[photoresistor]) < 0 or int(reqjs[photoresistor]) > 200:
+#                 return False
+#             else:
+#                 return True
+#         elif time_h_on in reqjs and time_m_on in reqjs and time_h_off in reqjs and time_m_off in reqjs:
+#             if int(reqjs[time_h_on]) < 0 or int(reqjs[time_h_on]) > 23:
+#                 return False
+#             elif int(reqjs[time_m_on]) < 0 or int(reqjs[time_m_on]) > 59:
+#                 return False
+#             elif int(reqjs[time_h_off]) < 0 or int(reqjs[time_h_off]) > 23:
+#                 return False
+#             elif int(reqjs[time_m_off]) < 0 or int(reqjs[time_m_off]) > 59:
+#                 return False
+#             else:
+#                 return True
+#         else:
+#             return False
+#     except ValueError:
+#         return False
+
+
+@app.route("/esls/api/" + version + "/debug/lamp/<int:lamp_id>/on", methods=['POST'])
+@auth.login_required
+def force_lamp_on(lamp_id):
+    if not request.json:
+        abort(400)
+    global lamp_number
+    global old_intensity
+    if lamp_id < lamp_number:
+        debug_future = lights[lamp_id].debug
+        pin_future = lights[lamp_id].pin
+        debug = debug_future.get(timeout=0.2)
+        pin = pin_future.get(timeout=0.2)
+        try:
+            new_intensity = int(request.json[INTENSITY])
+            if not debug:
+                lights[lamp_id].debug = True
+                old_intensity[lamp_id] = ledPWM.get_led_intensity(pin)
+            ledPWM.set_led_intensity(pin, new_intensity)
+            return jsonify({"result": "lamp is now on"}), 201
+        except KeyError:
+            abort(400)
+
+
+@app.route("/esls/api/" + version + "/debug/lamp/<int:lamp_id>/off", methods=['POST'])
+@auth.login_required
+def force_lamp_off(lamp_id):
+    if len(request.form) > 0:
+        abort(400)
+    global lamp_number
+    global old_intensity
+    if lamp_id < lamp_number:
+        debug_future = lights[lamp_id].debug
+        pin_future = lights[lamp_id].pin
+        debug = debug_future.get(timeout=0.2)
+        pin = pin_future.get(timeout=0.2)
+        if not debug:
+            lights[lamp_id].debug = True
+            old_intensity[lamp_id] = ledPWM.get_led_intensity(pin)
+        ledPWM.set_led_intensity(pin, 0)
+        return jsonify({"result": "lamp is now off"}), 201
+
+
+@app.route("/esls/api/" + version + "/debug/lamp/<int:lamp_id>/stop", methods=['POST'])  # TODO add a start?
+@auth.login_required
+def force_lamp_stop(lamp_id):
+    if len(request.form) > 0:
+        abort(400)
+    global lamp_number
+    global old_intensity
+    if lamp_id < lamp_number:
+        debug_future = lights[lamp_id].debug
+        pin_future = lights[lamp_id].pin
+        debug = debug_future.get(timeout=0.2)
+        pin = pin_future.get(timeout=0.2)
+        if debug:
+            lights[lamp_id].debug = False
+            ledPWM.set_led_intensity(pin, old_intensity.pop(lamp_id, 0))
+            return jsonify({"result": "Debug stopped"}), 201
         else:
+            return jsonify({"result": "Debug was already stopped"}), 201
+
+
+def sanity_check(lamp_id, pl_intensity_on=None, pl_time_h_on=None, pl_time_m_on=None, photoresistor_on=None,
+                 pl_time_h_off=None, pl_time_m_off=None, photoresistor_off=None, en_intensity=None,
+                 en_time_h_on=None, en_time_m_on=None, en_time_h_off=None, en_time_m_off=None):
+    try:
+        config = configparser.ConfigParser()
+        config.read(PATH_LIGHTS + str(lamp_id) + EXTENSION)
+        pl_intensity_on = int(config[LAMP_POLICY_ON][INTENSITY]) if pl_intensity_on is None else pl_intensity_on
+        pl_time_h_on = int(config[LAMP_POLICY_ON][TIME_H]) if pl_time_h_on is None else pl_time_h_on
+        pl_time_m_on = int(config[LAMP_POLICY_ON][TIME_M]) if pl_time_m_on is None else pl_time_m_on
+        photoresistor_on = int(config[LAMP_POLICY_ON][PHOTORESISTOR]) if photoresistor_on is None else photoresistor_on
+        pl_time_h_off = int(config[LAMP_POLICY_OFF][TIME_H]) if pl_time_h_off is None else pl_time_h_off
+        pl_time_m_off = int(config[LAMP_POLICY_OFF][TIME_M]) if pl_time_m_off is None else pl_time_m_off
+        photoresistor_off = int(
+            config[LAMP_POLICY_ON][PHOTORESISTOR]) if photoresistor_off is None else photoresistor_off
+        en_intensity = int(config[LAMP_ENERGY_SAVING][INTENSITY]) if en_intensity is None else en_intensity
+        en_time_h_on = int(config[LAMP_ENERGY_SAVING][TIME_H_ON]) if en_time_h_on is None else en_time_h_on
+        en_time_m_on = int(config[LAMP_ENERGY_SAVING][TIME_M_ON]) if en_time_m_on is None else en_time_m_on
+        en_time_h_off = int(config[LAMP_ENERGY_SAVING][TIME_H_OFF]) if en_time_h_off is None else en_time_h_off
+        en_time_m_off = int(config[LAMP_ENERGY_SAVING][TIME_M_OFF]) if en_time_m_off is None else en_time_m_off
+        if not (0 <= pl_intensity_on <= 100):
             return False
-    except ValueError:
+        elif not (0 <= en_intensity <= pl_intensity_on):
+            return False
+        elif not (photoresistor_on <= photoresistor_off):
+            return False
+        elif not (0 <= pl_time_h_on <= 23):
+            return False
+        elif not (0 <= pl_time_m_on <= 59):
+            return False
+        elif not (0 <= pl_time_h_off <= 23):
+            return False
+        elif not (0 <= pl_time_m_off <= 59):
+            return False
+        elif pl_time_h_on == pl_time_h_off and pl_time_m_on == pl_time_m_off:
+            return False
+        elif not (0 <= en_time_h_on <= 23):
+            return False
+        elif not (0 <= en_time_m_on <= 59):
+            return False
+        elif not (0 <= en_time_h_off <= 23):
+            return False
+        elif not (0 <= en_time_m_off <= 59):
+            return False
+        elif en_time_h_on == en_time_h_off and en_time_m_on == en_time_m_off:
+            return False
+        today = datetime.today()
+        policy_start = today.replace(hour=pl_time_h_on, minute=pl_time_m_on, second=0)
+        policy_end = today.replace(hour=pl_time_h_off, minute=pl_time_m_off, second=0)
+        if (policy_end - policy_start).seconds < 1:
+            policy_end = policy_end.replace(day=policy_end.day + 1)
+        en_start = today.replace(hour=en_time_h_on, minute=en_time_m_on, second=0)
+        en_end = today.replace(hour=en_time_h_off, minute=en_time_m_off, second=0)
+        if (en_end - en_start).seconds < 1:
+            en_end = en_end.replace(day=en_end.day + 1)
+        if en_start < policy_start or en_end > policy_end:
+            return False
+        return True
+    except (ValueError, KeyError):
         return False
 
 
@@ -238,27 +384,27 @@ def load_lights_ini(pr_proxy, us_proxy_1, us_proxy_2):
     lamp_number = 0
     still_reading = True
     while still_reading:
-        if os.path.isfile(path_lights + str(lamp_number) + extension):
+        if os.path.isfile(PATH_LIGHTS + str(lamp_number) + EXTENSION):
             lamp_number += 1
         else:
             still_reading = False
     for i in range(lamp_number):
-        config.read(path_lights + str(i) + extension)
+        config.read(PATH_LIGHTS + str(i) + EXTENSION)
         lamp_id = config['GENERAL']['lamp_id']
         lamp_pin = config['GENERAL']['lamp_pin']
-        pl_intensity_on = config['LampPolicyOn'][intensity]
-        pl_time_h_on = config['LampPolicyOn'][time_h]
-        pl_time_m_on = config['LampPolicyOn'][time_m]
-        pl_photoresistor_on = config['LampPolicyOn'][photoresistor]
-        pl_intensity_off = config['LampPolicyOff'][intensity]
-        pl_time_h_off = config['LampPolicyOff'][time_h]
-        pl_time_m_off = config['LampPolicyOff'][time_m]
-        pl_photoresistor_off = config['LampPolicyOff'][photoresistor]
-        en_intensity = config['LampEnergySaving'][intensity]
-        en_time_h_on = config['LampEnergySaving'][time_h_on]
-        en_time_m_on = config['LampEnergySaving'][time_m_on]
-        en_time_h_off = config['LampEnergySaving'][time_h_off]
-        en_time_m_off = config['LampEnergySaving'][time_m_off]
+        pl_intensity_on = config[LAMP_POLICY_ON][INTENSITY]
+        pl_time_h_on = config[LAMP_POLICY_ON][TIME_H]
+        pl_time_m_on = config[LAMP_POLICY_ON][TIME_M]
+        pl_photoresistor_on = config[LAMP_POLICY_ON][PHOTORESISTOR]
+        pl_intensity_off = config[LAMP_POLICY_OFF][INTENSITY]
+        pl_time_h_off = config[LAMP_POLICY_OFF][TIME_H]
+        pl_time_m_off = config[LAMP_POLICY_OFF][TIME_M]
+        pl_photoresistor_off = config[LAMP_POLICY_OFF][PHOTORESISTOR]
+        en_intensity = config[LAMP_ENERGY_SAVING][INTENSITY]
+        en_time_h_on = config[LAMP_ENERGY_SAVING][TIME_H_ON]
+        en_time_m_on = config[LAMP_ENERGY_SAVING][TIME_M_ON]
+        en_time_h_off = config[LAMP_ENERGY_SAVING][TIME_H_OFF]
+        en_time_m_off = config[LAMP_ENERGY_SAVING][TIME_M_OFF]
         lamp_policy_on = LampPolicy(pl_intensity_on, pl_time_h_on, pl_time_m_on, pl_photoresistor_on)
         lamp_policy_off = LampPolicy(pl_intensity_off, pl_time_h_off, pl_time_m_off, pl_photoresistor_off)
         lamp_energy = LampEnergySaving(en_intensity, en_time_h_on, en_time_m_on, en_time_h_off, en_time_m_off)
@@ -276,7 +422,7 @@ def main():
     us_proxy_1 = Ultrasonic.start(1, 2, True, 1).proxy()
     us_proxy_2 = Ultrasonic.start(1, 2, False, 1).proxy()
     config = configparser.ConfigParser()
-    config.read("config" + extension)
+    config.read("config" + EXTENSION)
     global user
     user = config['DEFAULT']['User']
     global password
