@@ -3,6 +3,7 @@ import json
 import threading
 import pykka
 import ledPWM
+# import main
 
 '''
 on: time_h=19 photoresistor=50
@@ -78,14 +79,15 @@ class Lamp(pykka.ThreadingActor):
         self.timer_energy_on_2.start()
         self.start_time_energy_on = datetime.today() + timedelta(seconds=wait_t)
 
-    def update_light(self, current_intensity):  # TODO check energy saving time
+    def update_light(self, current_photoresistor):  # TODO check energy saving time
         if not self.debug:
             if self.is_in_schedule():
-                if self.on and current_intensity > self.lamp_policy_off.photoresistor:
+                if self.on and current_photoresistor > self.lamp_policy_off.photoresistor:
+                    self.timer_energy_timeout.cancel()
                     ledPWM.set_led_intensity(self.pin, 0)
                     print("lamp off")
                     self.on = False
-                elif not self.on and current_intensity < self.lamp_policy_on.photoresistor:
+                elif not self.on and current_photoresistor < self.lamp_policy_on.photoresistor:
                     ledPWM.set_led_intensity(self.pin, self.lamp_policy_on.intensity)
                     print("lamp on")
                     self.on = True
@@ -104,11 +106,15 @@ class Lamp(pykka.ThreadingActor):
                         position = self.lamp_id
                     else:
                         position = self.lamp_number - self.lamp_id
-                    threading.Timer(wait_time*position, ledPWM.set_led_intensity, [self.pin, self.lamp_policy_on.intensity])
-                    # ledPWM.set_led_intensity(self.pin, self.lamp_policy_on.intensity)
+                    if position == self.lamp_number:  # If this is the last lamp we notify the nearest rpi
+                        from main import notify_nearby
+                        threading.Timer(wait_time * position, notify_nearby, right_lane)
+                    threading.Timer(wait_time * position, ledPWM.set_led_intensity,
+                                    [self.pin, self.lamp_policy_on.intensity])
                     print("There is a car! Lamp full power")
                     self.timer_energy_timeout.cancel()
-                    self.timer_energy_timeout = threading.Timer(us_timeout + wait_time * position, ledPWM.set_led_intensity,
+                    self.timer_energy_timeout = threading.Timer(us_timeout + wait_time * position,
+                                                                ledPWM.set_led_intensity,
                                                                 [self.pin, self.lamp_energy.intensity])
                     self.timer_energy_timeout.start()
             else:
@@ -128,19 +134,32 @@ class Lamp(pykka.ThreadingActor):
         today = datetime.today()
         start = today.replace(hour=start_h, minute=start_m, second=start_s)
         end = today.replace(hour=end_h, minute=end_m, second=end_s)
-        if (end - start).seconds < 1:
-            print("and even today we do it tomorrow")
+        if (end - start).total_seconds() < 1:
             end = end.replace(day=end.day + 1)
-        print("seconds to wait " + str((end - start).seconds))
-        return (end - start).seconds
+        return (end - start).total_seconds()
 
-    def is_in_schedule(self):  # TODO check if elapsed is negative?
+    @staticmethod
+    def get_wait(start_h, start_m, start_s, end_h, end_m, end_s):
+        today = datetime.today()
+        start = today.replace(hour=start_h, minute=start_m, second=start_s)
+        end = today.replace(hour=end_h, minute=end_m, second=end_s)
+        if (start - today).total_seconds() > 1:
+            return (start - today).total_seconds()
+        if (end - start).total_seconds() < 1:
+            end = end.replace(day=end.day + 1)
+        if (end - start).total_seconds() > 24*60*60:
+            start = start.replace(day=start.day + 1)
+        if (today - end).total_seconds() > 1:
+            start = start.replace(day=start.day + 1)
+        return (start - today).total_seconds()
+
+    def is_in_schedule(self):
         now = datetime.today()
-        elapsed = (now - self.start_time_on).seconds
+        elapsed = (now - self.start_time_on).total_seconds()
         return elapsed < self.timeout_on_off
 
     def is_energy_saving_time(self):
         now = datetime.today()
-        elapsed = (now - self.start_time_energy_on).seconds
+        elapsed = (now - self.start_time_energy_on).total_seconds()
         print("Are we in energy saving? " + str(elapsed < self.timeout_energy))
         return elapsed < self.timeout_energy

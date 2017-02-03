@@ -3,9 +3,11 @@ import pickle
 import configparser
 import threading
 import os.path
+import ssl
 
 from flask import Flask, jsonify, abort, make_response, request
 from flask_httpauth import HTTPBasicAuth
+from flask_cors import CORS, cross_origin
 
 import ledPWM
 from lamp import Lamp
@@ -16,6 +18,7 @@ from ultrasonic import Ultrasonic
 
 app = Flask(__name__)
 auth = HTTPBasicAuth()
+CORS(app)
 
 lights = []
 version = "v0.1"
@@ -40,6 +43,8 @@ readers = 0
 want_to_write = 0
 lamp_number = 0
 old_intensity = {}
+nearby = []
+nearby_timestamp = datetime.today()  # TODO initialize
 
 
 @auth.get_password
@@ -212,36 +217,6 @@ def set_energy_saving(lamp_id):
             abort(400)
     except KeyError:
         abort(400)
-
-
-# def sanity_check(reqjs):
-#     try:
-#         if intensity in reqjs and (int(reqjs[intensity]) < 0 or int(reqjs[intensity]) > 100):
-#             return False
-#         elif time_h in reqjs and time_m in reqjs and photoresistor in reqjs:
-#             if int(reqjs[time_h]) < 0 or int(reqjs[time_h]) > 23:
-#                 return False
-#             elif int(reqjs[time_m]) < 0 or int(reqjs[time_m]) > 59:
-#                 return False
-#             elif int(reqjs[photoresistor]) < 0 or int(reqjs[photoresistor]) > 200:
-#                 return False
-#             else:
-#                 return True
-#         elif time_h_on in reqjs and time_m_on in reqjs and time_h_off in reqjs and time_m_off in reqjs:
-#             if int(reqjs[time_h_on]) < 0 or int(reqjs[time_h_on]) > 23:
-#                 return False
-#             elif int(reqjs[time_m_on]) < 0 or int(reqjs[time_m_on]) > 59:
-#                 return False
-#             elif int(reqjs[time_h_off]) < 0 or int(reqjs[time_h_off]) > 23:
-#                 return False
-#             elif int(reqjs[time_m_off]) < 0 or int(reqjs[time_m_off]) > 59:
-#                 return False
-#             else:
-#                 return True
-#         else:
-#             return False
-#     except ValueError:
-#         return False
 
 
 @app.route("/esls/api/" + version + "/debug/lamp/<int:lamp_id>/on", methods=['POST'])
@@ -417,6 +392,13 @@ def load_lights_ini(pr_proxy, us_proxy_1, us_proxy_2):
         lights.append(lamp_proxy)
 
 
+def notify_nearby(right_lane):
+    if (datetime.today() - nearby_timestamp).seconds < 24*60*60:
+        pass  # TODO send message to nearby
+    else:
+        pass  # TODO update nearby with the server
+
+
 def main():
     pr_proxy = Photoresistor.start().proxy()
     us_proxy_1 = Ultrasonic.start(1, 2, True, 1).proxy()
@@ -433,4 +415,10 @@ def main():
 if __name__ == '__main__':
     main()
     # app.run(debug=True, threaded=True)
-    app.run(threaded=True)
+    context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+    # context = SSL.Context(SSL.SSLv3_METHOD)
+    context.load_cert_chain('DO.crt', 'DO.key')
+    #context.use_privatekey_file('/path_to_key/key.key')
+    #context.use_certificate_file('/path_to_cert/cert.crt')
+    app.run(threaded=True, host='192.168.2.194', port=9020, ssl_context=context)
+    #app.run(threaded=True)
