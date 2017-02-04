@@ -4,17 +4,52 @@
     <head>
         <title>Hello jQuery</title>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-        <script src="hello.js"></script>
+        <script src="neverEnoughjQuery.js"></script>
     </head>
 
     <body>
         <div>
-            <p class="greeting-id">The ID is </p>
-            <p class="greeting-content">The content is </p>
+            ID: <span class="lamp-id"></span>
+            <b><p>Policy</p></b>
+            <p>Intensity on: <span class="policy-on-intensity"></span></p>
+            <p>Time on: <span class="policy-on-time"></span></p>
+            <p>Time off: <span class="policy-off-time"></span></p>
+            <p>Photoresistor on: <span class="policy-on-photoresistor"></span></p>
+            <p>Photoresistor off: <span class="policy-off-photoresistor"></span></p>
+            <b><p>Energy Saving</p></b>
+            <p>Intensity: <span class="energy-intensity"></span></p>
+            <p>Time on: <span class="energy-on-time"></span></p>
+            <p>Time off: <span class="energy-off-time"></span></p>
         </div>
-        Credential: 
+        <b><p>-- Send Commands --</p></b>
+        <p>Credential: 
         <input type="text" name="Username" id="user" placeholder="user">
-        <input type="password" name="Password" id="password" placeholder="password">
-        <button id="ajax">Send Command</button>
+        <input type="password" name="Password" id="password" placeholder="password"></p>
+        <p>Change Energy policy</p>
+        <p><input type="text" name="energy-id" id="energy-id" placeholder="id">
+        <input type="text" name="energy-intensity" id="energy-intensity" placeholder="Intensity">
+        <input type="text" name="energy-time-h-on" id="energy-time-h-on" placeholder="Time h on">
+        <input type="text" name="energy-time-m-on" id="energy-time-m-on" placeholder="Time m on">
+        <input type="text" name="energy-time-h-off" id="energy-time-h-off" placeholder="Time h off">
+        <input type="text" name="energy-time-m-off" id="energy-time-m-off" placeholder="Time m off">
+        <button id="energy-post">Send!</button></p>
+        
+        <p>Change Policy on</p>
+        <p><input type="text" name="policy-on-id" id="policy-on-id" placeholder="id">
+        <input type="text" name="policy-on-intensity" id="policy-on-intensity" placeholder="Intensity">
+        <input type="text" name="policy-on-time-h" id="policy-on-time-h" placeholder="Time h">
+        <input type="text" name="policy-on-time-m" id="policy-on-time-m" placeholder="Time m">
+        <input type="text" name="policy-on-photoresistor" id="policy-on-photoresistor" placeholder="Photoresistor">
+        <button id="policy-on-post">Send!</button></p>
+        
+        <p>Change Policy off</p>
+        <p><input type="text" name="policy-off-id" id="policy-off-id" placeholder="id">
+        <input type="text" name="policy-off-time-h" id="policy-off-time-h" placeholder="Time h">
+        <input type="text" name="policy-off-time-m" id="policy-off-time-m" placeholder="Time m">
+        <input type="text" name="policy-off-photoresistor" id="policy-off-photoresistor" placeholder="Photoresistor">
+        <button id="policy-off-post">Send!</button></p>
+        
+        <p>Get Policies</p>
+        <p><input type="text" name="policy-id" id="policy-id" placeholder="id"><button id="policy-get">Get!</button></p>
     </body>
 </html>
