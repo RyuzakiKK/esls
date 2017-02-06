@@ -7,7 +7,7 @@ import ssl
 
 from flask import Flask, jsonify, abort, make_response, request
 from flask_httpauth import HTTPBasicAuth
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 
 import ledPWM
 from lamp import Lamp
@@ -15,6 +15,8 @@ from lampEnergySaving import LampEnergySaving
 from lampPolicy import LampPolicy
 from photoresistor import Photoresistor
 from ultrasonic import Ultrasonic
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
 
 app = Flask(__name__)
 auth = HTTPBasicAuth()
@@ -121,7 +123,7 @@ def set_lamp_policy_on(lamp_id):
             want_to_write -= 1
             global lamp_number
             if lamp_id < lamp_number and sanity_check(lamp_id, pl_intensity_on=new_intensity, pl_time_h_on=new_h_on,
-                                                      pl_time_m_off=new_m_on, photoresistor_on=new_photoresistor):
+                                                      pl_time_m_on=new_m_on, photoresistor_on=new_photoresistor):
                 policy_on = LampPolicy(new_intensity, new_h_on, new_m_on, new_photoresistor)
                 lights[lamp_id].lamp_policy_on = policy_on
                 lights[lamp_id].update_schedules()
@@ -261,7 +263,7 @@ def force_lamp_off(lamp_id):
         return jsonify({"result": "lamp is now off"}), 201
 
 
-@app.route("/esls/api/" + version + "/debug/lamp/<int:lamp_id>/stop", methods=['POST'])  # TODO add a start?
+@app.route("/esls/api/" + version + "/debug/lamp/<int:lamp_id>/stop", methods=['POST'])
 @auth.login_required
 def force_lamp_stop(lamp_id):
     if len(request.form) > 0:
@@ -281,6 +283,15 @@ def force_lamp_stop(lamp_id):
             return jsonify({"result": "Debug was already stopped"}), 201
 
 
+def send_post(self, this_action):
+    url = 'https://httpbin.org/post'  # TODO Set server url
+    post_fields = {'action': this_action}  # TODO what to send?
+
+    request_sent = Request(url, urlencode(post_fields).encode())
+    json_sent = urlopen(request_sent).read().decode()
+    print(json_sent)
+
+
 def sanity_check(lamp_id, pl_intensity_on=None, pl_time_h_on=None, pl_time_m_on=None, photoresistor_on=None,
                  pl_time_h_off=None, pl_time_m_off=None, photoresistor_off=None, en_intensity=None,
                  en_time_h_on=None, en_time_m_on=None, en_time_h_off=None, en_time_m_off=None):
@@ -294,7 +305,7 @@ def sanity_check(lamp_id, pl_intensity_on=None, pl_time_h_on=None, pl_time_m_on=
         pl_time_h_off = int(config[LAMP_POLICY_OFF][TIME_H]) if pl_time_h_off is None else pl_time_h_off
         pl_time_m_off = int(config[LAMP_POLICY_OFF][TIME_M]) if pl_time_m_off is None else pl_time_m_off
         photoresistor_off = int(
-            config[LAMP_POLICY_ON][PHOTORESISTOR]) if photoresistor_off is None else photoresistor_off
+            config[LAMP_POLICY_OFF][PHOTORESISTOR]) if photoresistor_off is None else photoresistor_off
         en_intensity = int(config[LAMP_ENERGY_SAVING][INTENSITY]) if en_intensity is None else en_intensity
         en_time_h_on = int(config[LAMP_ENERGY_SAVING][TIME_H_ON]) if en_time_h_on is None else en_time_h_on
         en_time_m_on = int(config[LAMP_ENERGY_SAVING][TIME_M_ON]) if en_time_m_on is None else en_time_m_on
@@ -329,11 +340,13 @@ def sanity_check(lamp_id, pl_intensity_on=None, pl_time_h_on=None, pl_time_m_on=
         today = datetime.today()
         policy_start = today.replace(hour=pl_time_h_on, minute=pl_time_m_on, second=0)
         policy_end = today.replace(hour=pl_time_h_off, minute=pl_time_m_off, second=0)
-        if (policy_end - policy_start).seconds < 1:
+        if (policy_end - policy_start).total_seconds() < 1:
             policy_end = policy_end.replace(day=policy_end.day + 1)
         en_start = today.replace(hour=en_time_h_on, minute=en_time_m_on, second=0)
         en_end = today.replace(hour=en_time_h_off, minute=en_time_m_off, second=0)
-        if (en_end - en_start).seconds < 1:
+        if (en_start - policy_start).total_seconds() < 0:
+            en_start = en_start.replace(day=en_start.day + 1)
+        if (en_end - en_start).total_seconds() < 1:
             en_end = en_end.replace(day=en_end.day + 1)
         if en_start < policy_start or en_end > policy_end:
             return False
@@ -365,26 +378,27 @@ def load_lights_ini(pr_proxy, us_proxy_1, us_proxy_2):
             still_reading = False
     for i in range(lamp_number):
         config.read(PATH_LIGHTS + str(i) + EXTENSION)
-        lamp_id = config['GENERAL']['lamp_id']
-        lamp_pin = config['GENERAL']['lamp_pin']
-        pl_intensity_on = config[LAMP_POLICY_ON][INTENSITY]
-        pl_time_h_on = config[LAMP_POLICY_ON][TIME_H]
-        pl_time_m_on = config[LAMP_POLICY_ON][TIME_M]
-        pl_photoresistor_on = config[LAMP_POLICY_ON][PHOTORESISTOR]
-        pl_intensity_off = config[LAMP_POLICY_OFF][INTENSITY]
-        pl_time_h_off = config[LAMP_POLICY_OFF][TIME_H]
-        pl_time_m_off = config[LAMP_POLICY_OFF][TIME_M]
-        pl_photoresistor_off = config[LAMP_POLICY_OFF][PHOTORESISTOR]
-        en_intensity = config[LAMP_ENERGY_SAVING][INTENSITY]
-        en_time_h_on = config[LAMP_ENERGY_SAVING][TIME_H_ON]
-        en_time_m_on = config[LAMP_ENERGY_SAVING][TIME_M_ON]
-        en_time_h_off = config[LAMP_ENERGY_SAVING][TIME_H_OFF]
-        en_time_m_off = config[LAMP_ENERGY_SAVING][TIME_M_OFF]
+        lamp_id = int(config['GENERAL']['lamp_id'])
+        lamp_pin = int(config['GENERAL']['lamp_pin'])
+        lamp_area = int(config['GENERAL']['lamp_area'])
+        pl_intensity_on = int(config[LAMP_POLICY_ON][INTENSITY])
+        pl_time_h_on = int(config[LAMP_POLICY_ON][TIME_H])
+        pl_time_m_on = int(config[LAMP_POLICY_ON][TIME_M])
+        pl_photoresistor_on = int(config[LAMP_POLICY_ON][PHOTORESISTOR])
+        pl_intensity_off = int(config[LAMP_POLICY_OFF][INTENSITY])
+        pl_time_h_off = int(config[LAMP_POLICY_OFF][TIME_H])
+        pl_time_m_off = int(config[LAMP_POLICY_OFF][TIME_M])
+        pl_photoresistor_off = int(config[LAMP_POLICY_OFF][PHOTORESISTOR])
+        en_intensity = int(config[LAMP_ENERGY_SAVING][INTENSITY])
+        en_time_h_on = int(config[LAMP_ENERGY_SAVING][TIME_H_ON])
+        en_time_m_on = int(config[LAMP_ENERGY_SAVING][TIME_M_ON])
+        en_time_h_off = int(config[LAMP_ENERGY_SAVING][TIME_H_OFF])
+        en_time_m_off = int(config[LAMP_ENERGY_SAVING][TIME_M_OFF])
         lamp_policy_on = LampPolicy(pl_intensity_on, pl_time_h_on, pl_time_m_on, pl_photoresistor_on)
         lamp_policy_off = LampPolicy(pl_intensity_off, pl_time_h_off, pl_time_m_off, pl_photoresistor_off)
         lamp_energy = LampEnergySaving(en_intensity, en_time_h_on, en_time_m_on, en_time_h_off, en_time_m_off)
-        lamp_proxy = Lamp.start(lamp_id, lamp_number, lamp_pin, pr_proxy, us_proxy_1, us_proxy_2, lamp_policy_on,
-                                lamp_policy_off, lamp_energy).proxy()
+        lamp_proxy = Lamp.start(lamp_id, lamp_number, lamp_pin, lamp_area, pr_proxy, us_proxy_1, us_proxy_2,
+                                lamp_policy_on, lamp_policy_off, lamp_energy).proxy()
         lamp_proxy.set_self_proxy(lamp_proxy)
         lamp_proxy.update_schedules()
         lamp_proxy.start_schedule_on()
@@ -414,11 +428,6 @@ def main():
 
 if __name__ == '__main__':
     main()
-    # app.run(debug=True, threaded=True)
     context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-    # context = SSL.Context(SSL.SSLv3_METHOD)
     context.load_cert_chain('DO.crt', 'DO.key')
-    #context.use_privatekey_file('/path_to_key/key.key')
-    #context.use_certificate_file('/path_to_cert/cert.crt')
     app.run(threaded=True, host='192.168.2.194', port=9020, ssl_context=context)
-    #app.run(threaded=True)

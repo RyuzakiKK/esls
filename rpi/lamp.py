@@ -3,7 +3,9 @@ import json
 import threading
 import pykka
 import ledPWM
-# import main
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
+from enum import Enum
 
 '''
 on: time_h=19 photoresistor=50
@@ -23,19 +25,24 @@ time_h=6 photoresistor=60 -> switch off
 # TODO if there is a car, what to do with pr value?
 
 
+action = Enum('action', 'turn_on turn_off energy_saving car_detected error')
+
+
 class Lamp(pykka.ThreadingActor):
-    def __init__(self, lamp_id, lamp_number, pin, pr_proxy, us_proxy_1, us_proxy_2, lamp_policy_on=None,
+    def __init__(self, lamp_id, lamp_number, pin, area, pr_proxy, us_proxy_1, us_proxy_2, lamp_policy_on=None,
                  lamp_policy_off=None, lamp_energy=None):
         super(Lamp, self).__init__()
         self.lamp_id = lamp_id
         self.lamp_number = lamp_number
         self.pin = pin
+        self.area = area
         self.lamp_policy_on = lamp_policy_on
         self.lamp_policy_off = lamp_policy_off
         self.lamp_energy = lamp_energy
         self.timer_on = threading.Timer(0, None)
         self.timer_energy_on_1 = threading.Timer(0, None)
         self.timer_energy_on_2 = threading.Timer(0, None)
+        self.start_energy = threading.Timer(0, None)
         self.timer_energy_timeout = threading.Timer(0, None)
         self.my_proxy = None
         self.start_time_on = None
@@ -62,6 +69,7 @@ class Lamp(pykka.ThreadingActor):
         today = datetime.today()
         wait_t = self.get_delta(today.hour, today.minute, today.second, self.lamp_policy_on.time_h,
                                 self.lamp_policy_on.time_m, 0)
+        print(wait_t)
         self.timer_on.cancel()
         self.timer_on = threading.Timer(wait_t, self.pr_proxy.add_actor, [self.my_proxy])
         self.timer_on.start()
@@ -77,9 +85,12 @@ class Lamp(pykka.ThreadingActor):
         self.timer_energy_on_2.cancel()
         self.timer_energy_on_2 = threading.Timer(wait_t, self.us_proxy_2.add_actor, [self.my_proxy])
         self.timer_energy_on_2.start()
+        self.start_energy.cancel()
+        self.start_energy = threading.Timer(wait_t, self.set_to_energy)
+        self.start_energy.start()
         self.start_time_energy_on = datetime.today() + timedelta(seconds=wait_t)
 
-    def update_light(self, current_photoresistor):  # TODO check energy saving time
+    def update_light(self, current_photoresistor):
         if not self.debug:
             if self.is_in_schedule():
                 if self.on and current_photoresistor > self.lamp_policy_off.photoresistor:
@@ -87,10 +98,18 @@ class Lamp(pykka.ThreadingActor):
                     ledPWM.set_led_intensity(self.pin, 0)
                     print("lamp off")
                     self.on = False
+                    self.send_post(action.turn_off.value, 0, current_photoresistor)
                 elif not self.on and current_photoresistor < self.lamp_policy_on.photoresistor:
-                    ledPWM.set_led_intensity(self.pin, self.lamp_policy_on.intensity)
-                    print("lamp on")
-                    self.on = True
+                    if self.is_energy_saving_time():
+                        ledPWM.set_led_intensity(self.pin, self.lamp_energy.intensity)
+                        print("lamp on")
+                        self.on = True
+                        self.send_post(action.energy_saving.value, self.lamp_energy.intensity, current_photoresistor)
+                    else:
+                        ledPWM.set_led_intensity(self.pin, self.lamp_policy_on.intensity)
+                        print("lamp on")
+                        self.on = True
+                        self.send_post(action.turn_on.value, self.lamp_policy_on.intensity, current_photoresistor)
             else:
                 print("schedule is over, see you tomorrow")
                 self.pr_proxy.remove_actor(self.my_proxy)
@@ -109,13 +128,10 @@ class Lamp(pykka.ThreadingActor):
                     if position == self.lamp_number:  # If this is the last lamp we notify the nearest rpi
                         from main import notify_nearby
                         threading.Timer(wait_time * position, notify_nearby, right_lane)
-                    threading.Timer(wait_time * position, ledPWM.set_led_intensity,
-                                    [self.pin, self.lamp_policy_on.intensity])
+                    threading.Timer(wait_time * position, self.car_detected)
                     print("There is a car! Lamp full power")
                     self.timer_energy_timeout.cancel()
-                    self.timer_energy_timeout = threading.Timer(us_timeout + wait_time * position,
-                                                                ledPWM.set_led_intensity,
-                                                                [self.pin, self.lamp_energy.intensity])
+                    self.timer_energy_timeout = threading.Timer(us_timeout + wait_time * position, self.set_to_energy)
                     self.timer_energy_timeout.start()
             else:
                 self.timer_energy_timeout.cancel()
@@ -124,10 +140,25 @@ class Lamp(pykka.ThreadingActor):
                 self.us_proxy_2.remove_actor(self.my_proxy)
                 self.start_schedule_energy_on()
 
+    def send_post(self, this_action, intensity, photoresistor):
+        url = 'https://httpbin.org/post'  # TODO Set server url
+        post_fields = {'area': self.area, 'action': this_action, 'intensity': intensity, 'photoresistor': photoresistor}
+
+        request = Request(url, urlencode(post_fields).encode())
+        json_sent = urlopen(request).read().decode()
+        print(json_sent)
+
+    def car_detected(self):
+        ledPWM.set_led_intensity(self.pin, self.lamp_policy_on.intensity)
+        self.send_post(action.car_detected.value, self.lamp_policy_on.intensity, -1)
+
+    def set_to_energy(self):
+        ledPWM.set_led_intensity(self.pin, self.lamp_energy.intensity)
+        self.send_post(action.energy_saving.value, self.lamp_energy.intensity, -1)
+
     def to_json(self):
         return json.dumps([self.lamp_id, self.lamp_policy_on, self.lamp_policy_off, self.lamp_energy],
-                          default=lambda o: o.__dict__,
-                          sort_keys=True, indent=4)
+                          default=lambda o: o.__dict__, indent=4)
 
     @staticmethod
     def get_delta(start_h, start_m, start_s, end_h, end_m, end_s):
