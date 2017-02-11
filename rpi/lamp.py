@@ -21,8 +21,6 @@ or
 time_h=6 photoresistor=60 -> switch off
 '''
 # no need for a lock because everything here is single thread
-# TODO tell the nearby
-# TODO if there is a car, what to do with pr value?
 
 
 action = Enum('action', 'turn_on turn_off energy_saving car_detected error')
@@ -113,9 +111,10 @@ class Lamp(pykka.ThreadingActor):
             else:
                 print("schedule is over, see you tomorrow")
                 self.pr_proxy.remove_actor(self.my_proxy)
+                self.send_post(action.turn_off.value, 0, current_photoresistor)
                 self.start_schedule_on()
 
-    def ultrasonic_notify(self, us_timeout, wait_time, right_lane):
+    def ultrasonic_notify(self, us_timeout, wait_time, right_lane, notified=False):
         if not self.debug:
             if self.is_in_schedule() and self.is_energy_saving_time():
                 if self.on:
@@ -125,7 +124,8 @@ class Lamp(pykka.ThreadingActor):
                         position = self.lamp_id
                     else:
                         position = self.lamp_number - self.lamp_id
-                    if position == self.lamp_number:  # If this is the last lamp we notify the nearest rpi
+                    # If this is the last lamp and we were not notified, we notify the nearest rpi
+                    if position == self.lamp_number and not notified:
                         from main import notify_nearby
                         threading.Timer(wait_time * position, notify_nearby, right_lane)
                     threading.Timer(wait_time * position, self.car_detected)

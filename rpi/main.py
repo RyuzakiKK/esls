@@ -4,6 +4,7 @@ import configparser
 import threading
 import os.path
 import ssl
+from distutils.util import strtobool
 
 from flask import Flask, jsonify, abort, make_response, request
 from flask_httpauth import HTTPBasicAuth
@@ -35,7 +36,9 @@ PHOTORESISTOR = "photoresistor"
 LAMP_POLICY_ON = "LampPolicyOn"
 LAMP_POLICY_OFF = "LampPolicyOff"
 LAMP_ENERGY_SAVING = "LampEnergySaving"
+RIGHT_LANE = "right_lane"
 PATH_LIGHTS = "lights/light"
+PATH_NEIGHBORS = "neighbors/nearby"
 EXTENSION = ".cfg"
 user = ""
 password = ""
@@ -45,8 +48,7 @@ readers = 0
 want_to_write = 0
 lamp_number = 0
 old_intensity = {}
-nearby = []
-nearby_timestamp = datetime.today()  # TODO initialize
+neighbors = []  # TODO initialize with a text file
 
 
 @auth.get_password
@@ -86,7 +88,7 @@ def get_lamp_policies(lamp_id):
     if lamp_id < len(lights):
         future = lights[lamp_id].to_json()
         try:
-            ret_val = future.get(timeout=0.2), 201
+            ret_val = future.get(timeout=0.2), 200
         except Exception:
             error = True
             error_number = 500
@@ -136,7 +138,7 @@ def set_lamp_policy_on(lamp_id):
                 config[LAMP_POLICY_ON][PHOTORESISTOR] = str(new_photoresistor)
                 with open(PATH_LIGHTS + str(lamp_id) + EXTENSION, 'w') as configfile:
                     config.write(configfile)
-                return jsonify({"result": "ok"}), 201
+                return jsonify({"result": "ok"}), 200
             else:
                 abort(400)
     except KeyError:
@@ -174,7 +176,7 @@ def set_lamp_policy_off(lamp_id):
                 config[LAMP_POLICY_OFF][PHOTORESISTOR] = str(new_photoresistor)
                 with open(PATH_LIGHTS + str(lamp_id) + EXTENSION, 'w') as configfile:
                     config.write(configfile)
-                return jsonify({"result": "ok"}), 201
+                return jsonify({"result": "ok"}), 200
             abort(400)
     except KeyError:
         abort(400)
@@ -215,10 +217,36 @@ def set_energy_saving(lamp_id):
                 config[LAMP_ENERGY_SAVING][TIME_M_OFF] = str(new_m_off)
                 with open(PATH_LIGHTS + str(lamp_id) + EXTENSION, 'w') as configfile:
                     config.write(configfile)
-                return jsonify({"result": "ok"}), 201
+                return jsonify({"result": "ok"}), 200
             abort(400)
     except KeyError:
         abort(400)
+
+
+@app.route("/esls/api/" + version + "/internal/notify", methods=['POST'])
+@auth.login_required
+def notify_received():
+    global readers
+    global want_to_write
+    if not request.json:
+        abort(400)
+    with cv:
+        while want_to_write > 0:
+            cv.wait()
+        readers += 1
+    right_lane = False
+    try:
+        right_lane = int(request.json[RIGHT_LANE])
+    except KeyError:
+        abort(400)
+
+    for lamp in lights:
+        lamp.ultrasonic_notify(1, 2, right_lane, notified=True)
+    with cv:
+        readers -= 1
+        if not readers:
+            cv.notifyAll()
+        return jsonify({"result": "ok"}), 200
 
 
 @app.route("/esls/api/" + version + "/debug/lamp/<int:lamp_id>/on", methods=['POST'])
@@ -239,7 +267,7 @@ def force_lamp_on(lamp_id):
                 lights[lamp_id].debug = True
                 old_intensity[lamp_id] = ledPWM.get_led_intensity(pin)
             ledPWM.set_led_intensity(pin, new_intensity)
-            return jsonify({"result": "lamp is now on"}), 201
+            return jsonify({"result": "lamp is now on"}), 200
         except KeyError:
             abort(400)
 
@@ -260,7 +288,7 @@ def force_lamp_off(lamp_id):
             lights[lamp_id].debug = True
             old_intensity[lamp_id] = ledPWM.get_led_intensity(pin)
         ledPWM.set_led_intensity(pin, 0)
-        return jsonify({"result": "lamp is now off"}), 201
+        return jsonify({"result": "lamp is now off"}), 200
 
 
 @app.route("/esls/api/" + version + "/debug/lamp/<int:lamp_id>/stop", methods=['POST'])
@@ -278,14 +306,14 @@ def force_lamp_stop(lamp_id):
         if debug:
             lights[lamp_id].debug = False
             ledPWM.set_led_intensity(pin, old_intensity.pop(lamp_id, 0))
-            return jsonify({"result": "Debug stopped"}), 201
+            return jsonify({"result": "Debug stopped"}), 200
         else:
-            return jsonify({"result": "Debug was already stopped"}), 201
+            return jsonify({"result": "Debug was already stopped"}), 200
 
 
-def send_post(self, this_action):
+def send_post(url, post_fields):
     url = 'https://httpbin.org/post'  # TODO Set server url
-    post_fields = {'action': this_action}  # TODO what to send?
+    post_fields = {'action': 'this_action'}  # TODO what to send?
 
     request_sent = Request(url, urlencode(post_fields).encode())
     json_sent = urlopen(request_sent).read().decode()
@@ -406,11 +434,26 @@ def load_lights_ini(pr_proxy, us_proxy_1, us_proxy_2):
         lights.append(lamp_proxy)
 
 
+def load_neighbors_ini():
+    config = configparser.ConfigParser()
+    neighbors_number = 0
+    still_reading = True
+    while still_reading:
+        if os.path.isfile(PATH_NEIGHBORS + str(neighbors_number) + EXTENSION):
+            neighbors_number += 1
+        else:
+            still_reading = False
+    global neighbors
+    for i in range(neighbors_number):
+        config.read(PATH_NEIGHBORS + str(i) + EXTENSION)
+        following = config['GENERAL']['following']
+        neighbors[strtobool(following)].append(config['GENERAL']['url'])
+
+
 def notify_nearby(right_lane):
-    if (datetime.today() - nearby_timestamp).seconds < 24*60*60:
-        pass  # TODO send message to nearby
-    else:
-        pass  # TODO update nearby with the server
+    i = 1 if right_lane else 0
+    for nearby in neighbors[i]:
+        send_post(nearby, right_lane)
 
 
 def main():
@@ -424,6 +467,7 @@ def main():
     global password
     password = config['DEFAULT']['Pass']
     load_lights_ini(pr_proxy, us_proxy_1, us_proxy_2)
+    load_neighbors_ini()
 
 
 if __name__ == '__main__':

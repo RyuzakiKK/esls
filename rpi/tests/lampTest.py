@@ -20,11 +20,11 @@ class LampTest(unittest.TestCase):
     def test_get_wait(self, mock_date):
         # start = 20:00 | today = 22:00 | end = 5:00
         mock_date.today.return_value = datetime(2017, 2, 1, 22, 0)
-        assert lamp.Lamp.get_wait(20, 0, 0, 5, 0, 0) == -2*60*60
+        assert lamp.Lamp.get_wait(20, 0, 0, 5, 0, 0) == -2 * 60 * 60
 
         # start = 20:00 | end = 22:00 | today = 23:00
         mock_date.today.return_value = datetime(2017, 2, 1, 23, 0)
-        assert lamp.Lamp.get_wait(20, 0, 0, 22, 0, 0) == 21*60*60
+        assert lamp.Lamp.get_wait(20, 0, 0, 22, 0, 0) == 21 * 60 * 60
 
         # start = 20:00 | end = 5:00 | today = 6:00
         mock_date.today.return_value = datetime(2017, 2, 1, 6, 0)
@@ -37,5 +37,3 @@ class LampTest(unittest.TestCase):
         # today = 19:00 | start = 20:00 | end = 5:00
         mock_date.today.return_value = datetime(2017, 2, 1, 19, 0)
         assert lamp.Lamp.get_wait(20, 0, 0, 5, 0, 0) == 1 * 60 * 60
-
-
