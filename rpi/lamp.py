@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import json
 import threading
+
 import pykka
 import ledPWM
 from urllib.parse import urlencode
@@ -23,7 +24,8 @@ time_h=6 photoresistor=60 -> switch off
 # no need for a lock because everything here is single thread
 
 
-action = Enum('action', 'turn_on turn_off energy_saving car_detected error')
+action = Enum('action', 'turn_on turn_off energy_saving car_detected')
+error = Enum('error', 'generic')
 
 
 class Lamp(pykka.ThreadingActor):
@@ -140,9 +142,10 @@ class Lamp(pykka.ThreadingActor):
                 self.us_proxy_2.remove_actor(self.my_proxy)
                 self.start_schedule_energy_on()
 
-    def send_post(self, this_action, intensity, photoresistor):
+    def send_post(self, this_action, intensity, photoresistor=-1, timestamp=0):
         url = 'https://httpbin.org/post'  # TODO Set server url
-        post_fields = {'area': self.area, 'action': this_action, 'intensity': intensity, 'photoresistor': photoresistor}
+        post_fields = {'area': self.area, 'action': this_action, 'intensity': intensity, 'photoresistor': photoresistor,
+                       'timestamp': timestamp}
 
         request = Request(url, urlencode(post_fields).encode())
         json_sent = urlopen(request).read().decode()
@@ -150,11 +153,11 @@ class Lamp(pykka.ThreadingActor):
 
     def car_detected(self):
         ledPWM.set_led_intensity(self.pin, self.lamp_policy_on.intensity)
-        self.send_post(action.car_detected.value, self.lamp_policy_on.intensity, -1)
+        self.send_post(action.car_detected.value, self.lamp_policy_on.intensity)
 
     def set_to_energy(self):
         ledPWM.set_led_intensity(self.pin, self.lamp_energy.intensity)
-        self.send_post(action.energy_saving.value, self.lamp_energy.intensity, -1)
+        self.send_post(action.energy_saving.value, self.lamp_energy.intensity)
 
     def to_json(self):
         return json.dumps([self.lamp_id, self.lamp_policy_on, self.lamp_policy_off, self.lamp_energy],

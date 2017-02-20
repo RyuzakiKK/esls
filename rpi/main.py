@@ -24,7 +24,7 @@ auth = HTTPBasicAuth()
 CORS(app)
 
 lights = []
-version = "v0.1"
+version = "1.0"
 INTENSITY = "intensity"
 TIME_H = "time_h"
 TIME_M = "time_m"
@@ -40,6 +40,7 @@ RIGHT_LANE = "right_lane"
 PATH_LIGHTS = "lights/light"
 PATH_NEIGHBORS = "neighbors/nearby"
 EXTENSION = ".cfg"
+SERVER_URL = "https://supersecureserver.com/esls/api/1.0/changePolicy"
 user = ""
 password = ""
 cv = threading.Condition()
@@ -48,7 +49,7 @@ readers = 0
 want_to_write = 0
 lamp_number = 0
 old_intensity = {}
-neighbors = []  # TODO initialize with a text file
+neighbors = []
 
 
 @auth.get_password
@@ -136,6 +137,8 @@ def set_lamp_policy_on(lamp_id):
                 config[LAMP_POLICY_ON][TIME_H] = str(new_h_on)
                 config[LAMP_POLICY_ON][TIME_M] = str(new_m_on)
                 config[LAMP_POLICY_ON][PHOTORESISTOR] = str(new_photoresistor)
+                post_fields = {'area': config['GENERAL']['lamp_area'], 'timestamp': '0'}
+                send_post(SERVER_URL, post_fields)
                 with open(PATH_LIGHTS + str(lamp_id) + EXTENSION, 'w') as configfile:
                     config.write(configfile)
                 return jsonify({"result": "ok"}), 200
@@ -174,6 +177,8 @@ def set_lamp_policy_off(lamp_id):
                 config[LAMP_POLICY_OFF][TIME_H] = str(new_h_off)
                 config[LAMP_POLICY_OFF][TIME_M] = str(new_m_off)
                 config[LAMP_POLICY_OFF][PHOTORESISTOR] = str(new_photoresistor)
+                post_fields = {'area': config['GENERAL']['lamp_area'], 'timestamp': '0'}
+                send_post(SERVER_URL, post_fields)
                 with open(PATH_LIGHTS + str(lamp_id) + EXTENSION, 'w') as configfile:
                     config.write(configfile)
                 return jsonify({"result": "ok"}), 200
@@ -215,6 +220,8 @@ def set_energy_saving(lamp_id):
                 config[LAMP_ENERGY_SAVING][TIME_M_ON] = str(new_m_on)
                 config[LAMP_ENERGY_SAVING][TIME_H_OFF] = str(new_h_off)
                 config[LAMP_ENERGY_SAVING][TIME_M_OFF] = str(new_m_off)
+                post_fields = {'area': config['GENERAL']['lamp_area'], 'timestamp': '0'}
+                send_post(SERVER_URL, post_fields)
                 with open(PATH_LIGHTS + str(lamp_id) + EXTENSION, 'w') as configfile:
                     config.write(configfile)
                 return jsonify({"result": "ok"}), 200
@@ -246,7 +253,7 @@ def notify_received():
         readers -= 1
         if not readers:
             cv.notifyAll()
-        return jsonify({"result": "ok"}), 200
+    return jsonify({"result": "ok"}), 200
 
 
 @app.route("/esls/api/" + version + "/debug/lamp/<int:lamp_id>/on", methods=['POST'])
@@ -280,15 +287,16 @@ def force_lamp_off(lamp_id):
     global lamp_number
     global old_intensity
     if lamp_id < lamp_number:
-        debug_future = lights[lamp_id].debug
-        pin_future = lights[lamp_id].pin
-        debug = debug_future.get(timeout=0.2)
-        pin = pin_future.get(timeout=0.2)
-        if not debug:
-            lights[lamp_id].debug = True
-            old_intensity[lamp_id] = ledPWM.get_led_intensity(pin)
-        ledPWM.set_led_intensity(pin, 0)
-        return jsonify({"result": "lamp is now off"}), 200
+        with cv:
+            debug_future = lights[lamp_id].debug
+            pin_future = lights[lamp_id].pin
+            debug = debug_future.get(timeout=0.2)
+            pin = pin_future.get(timeout=0.2)
+            if not debug:
+                lights[lamp_id].debug = True
+                old_intensity[lamp_id] = ledPWM.get_led_intensity(pin)
+            ledPWM.set_led_intensity(pin, 0)
+            return jsonify({"result": "lamp is now off"}), 200
 
 
 @app.route("/esls/api/" + version + "/debug/lamp/<int:lamp_id>/stop", methods=['POST'])
@@ -299,22 +307,20 @@ def force_lamp_stop(lamp_id):
     global lamp_number
     global old_intensity
     if lamp_id < lamp_number:
-        debug_future = lights[lamp_id].debug
-        pin_future = lights[lamp_id].pin
-        debug = debug_future.get(timeout=0.2)
-        pin = pin_future.get(timeout=0.2)
-        if debug:
-            lights[lamp_id].debug = False
-            ledPWM.set_led_intensity(pin, old_intensity.pop(lamp_id, 0))
-            return jsonify({"result": "Debug stopped"}), 200
-        else:
-            return jsonify({"result": "Debug was already stopped"}), 200
+        with cv:
+            debug_future = lights[lamp_id].debug
+            pin_future = lights[lamp_id].pin
+            debug = debug_future.get(timeout=0.2)
+            pin = pin_future.get(timeout=0.2)
+            if debug:
+                lights[lamp_id].debug = False
+                ledPWM.set_led_intensity(pin, old_intensity.pop(lamp_id, 0))
+                return jsonify({"result": "Debug stopped"}), 200
+            else:
+                return jsonify({"result": "Debug was already stopped"}), 200
 
 
 def send_post(url, post_fields):
-    url = 'https://httpbin.org/post'  # TODO Set server url
-    post_fields = {'action': 'this_action'}  # TODO what to send?
-
     request_sent = Request(url, urlencode(post_fields).encode())
     json_sent = urlopen(request_sent).read().decode()
     print(json_sent)
@@ -472,6 +478,6 @@ def main():
 
 if __name__ == '__main__':
     main()
-    context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+    context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)  # PROTOCOL_SSLv23 is an alias for PROTOCOL_TLS
     context.load_cert_chain('DO.crt', 'DO.key')
     app.run(threaded=True, host='192.168.2.194', port=9020, ssl_context=context)
