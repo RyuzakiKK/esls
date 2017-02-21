@@ -1,0 +1,146 @@
+\documentclass[12pt,a4paper]{book}
+
+
+               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+               %    Scelta dei package da usare     %
+               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage[italian]{babel}
+%\usepackage[latin1]{inputenc}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amsfonts,amssymb,amsthm}
+\usepackage{deistesi}
+\usepackage{fancyhdr}
+
+
+
+\usepackage[final]{listings}
+\usepackage[table]{xcolor}
+
+\definecolor{dkgreen}{rgb}{0.4,0.4,0.4}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{dkgray}{rgb}{0.2,0.2,0.2}
+\definecolor{commentgray}{rgb}{0.6,0.6,0.6}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{
+frame=single,
+  captionpos=b,
+  language=Python,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\fontsize{10}{10}\ttfamily},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{commentgray},
+  stringstyle=\color{gray},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3,
+  morekeywords={final},
+  frame=single,
+  rulecolor=\color{black}
+}
+
+
+               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+               % Scelta delle dimensioni della pagina %
+               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\setlength{\textwidth}{13.5cm}
+\setlength{\textheight}{19cm}
+\setlength{\footskip}{3cm}
+\setlength{\headheight}{15pt}
+\oddsidemargin=50pt \evensidemargin=20pt
+
+
+               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+               %  Informazioni generali sulla Tesi  %
+               %    da usare nell'intestazione      %
+               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\titolo{Un Distributore Intelligente di Bevande alla Spina con Sistema di Pagamento basato su Bitcoin}
+\laureando{Ludovico de Nittis}
+\annoaccademico{2014--2015}
+\facolta{CAMPUS DI CESENA\\SCUOLA DI SCIENZE}
+\corsodilaurea{Ingegneria e Scienze Informatiche}
+\corso{Programmazione di Sistemi Embedded}
+\relatore{Alessandro Ricci}
+%\correlatorea[]{}
+%\correlatoreb[]{Pablo Neruda}
+\parolechiave{Bitcoin}{IoT}{Raspberry Pi}{Vending Machine}{Distributore Intelligente}
+\dedica{\textit{"Computers are like Old Testament gods; lots of rules and no mercy." - Joseph Campbell}}
+               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+               % Fine Preambolo %
+               % Inizio tesi     %
+               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ \sessione{II}
+               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+               % Fine Preambolo %
+               % Inizio tesi     %
+               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+% inizio prefazione
+%
+% pagina del titolo, indice, sommario
+%%%%%%%%%%%%%%%%%%%%%%%%%
+\frontmatter \maketitle \pagestyle{plain} \tableofcontents
+%``testo''
+
+\input{introduzione.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+% inizio corpo del documento
+%
+% sequenze dei vari capitoli
+% è consigliato mantenere una struttura logica ben definita per separare i vari capitoli
+% si consiglia di reificare tale struttura fisicamente sul file system
+%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\mainmatter
+
+% stile della pagina
+\pagestyle{fancy} \fancyhead[LE,RO]{\bfseries\thepage}
+
+% inclusione dei capitoli
+\input{capitolo1.tex}
+
+
+
+%\chapter*{Ringraziamenti}
+
+
+
+%\appendix
+
+% inclusione dei capitoli
+%\input{./Capitolo2/capitolo2.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+% inizio parte finale del documento
+%
+% eventuali appendici, bibliografia obbligatoria,
+% eventuale lista delle tabelle e delle figure (nel caso decommentare la riga con i comandi \listoffigures e \listoftables)
+%%%%%%%%%%%%%%%%%%%%%%%%%
+\backmatter
+
+
+%\input{./Appendice/appendice.tex}
+% \input{./Bibliografia/bibliografia.tex}
+
+\listoffigures
+\bibliography{biblio}
+\bibliographystyle{abbrv}
+
+%\listoftables
+
+% chiusura del documento
+\end{document}
