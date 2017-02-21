@@ -2,110 +2,163 @@
 <meta charset="UTF-8">
 <html>
 <head>
-    <title>Esls configuration</title>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-    <script src="neverEnoughjQuery.js"></script>
-    <script src="https://cdn.jsdelivr.net/jquery.validation/1.16.0/jquery.validate.min.js"></script>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.98.0/css/materialize.min.css" media="screen,projection">
     <link rel="stylesheet" href="style.css"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    <title>Esls configuration</title>
 </head>
 <body>
-<div>
-    <p>ID: <span class="lamp_id"></span></p>
-    <p><b>Policy</b></p>
-    <p>Intensity on: <span class="policy_on_intensity"></span></p>
-    <p>Time on: <span class="policy_on_time"></span></p>
-    <p>Time off: <span class="policy_off_time"></span></p>
-    <p>Photoresistor on: <span class="policy_on_photoresistor"></span></p>
-    <p>Photoresistor off: <span class="policy_off_photoresistor"></span></p>
-    <p><b>Energy Saving</b></p>
-    <p>Intensity: <span class="energy_intensity"></span></p>
-    <p>Time on: <span class="energy_on_time"></span></p>
-    <p>Time off: <span class="energy_off_time"></span></p>
-</div>
-<p><b>-- Send Commands --</b></p>
 <div class="container">
     <p>Credential</p>
-    <form id="login_form">
-        <input type="text" name="Username" id="user" placeholder="user" required>
-        <input type="password" name="Password" id="password" placeholder="password" required>
-        <input type="submit" style="display:none" name="submitButton">
+    <form id="login_form" class="col s12" novalidate="novalidate">
+        <div class="row">
+            <div class="input-field col s6">
+                <input type="text" name="Username" id="user" required=""><label for="user">User</label>
+            </div>
+            <div class="input-field col s6">
+                <input type="password" name="Password" id="password" required=""><label for="password">Password</label>
+            </div>
+            <input type="submit" style="display:none" name="submitButton">
+        </div>
     </form>
 
     <p>Change Energy policy</p>
-    <form id="energy_form">
-        <table>
-            <tr>
-                <td><input type="text" name="energy_id" id="energy_id" placeholder="id"></td>
-                <td><input type="text" name="energy_intensity" id="energy_intensity" placeholder="Intensity"></td>
-                <td><input type="text" name="energy_time_h_on" id="energy_time_h_on" placeholder="Time h on"></td>
-                <td><input type="text" name="energy_time_m_on" id="energy_time_m_on" placeholder="Time m on"></td>
-                <td><input type="text" name="energy_time_h_off" id="energy_time_h_off" placeholder="Time h off"></td>
-                <td><input type="text" name="energy_time_m_off" id="energy_time_m_off" placeholder="Time m off"></td>
-                <td><input type="submit" id="energy_submit" value="Submit!"/></td>
-            </tr>
-            <tr>
-                <td id="energy_id_error"></td>
-                <td id="energy_intensity_error"></td>
-                <td id="energy_time_h_on_error"></td>
-                <td id="energy_time_m_on_error"></td>
-                <td id="energy_time_h_off_error"></td>
-                <td id="energy_time_m_off_error"></td>
-            </tr>
-        </table>
+
+    <form id="energy_form" class="col s12" novalidate="novalidate">
+        <div class="row">
+            <div class="input-field col s6">
+                <input type="text" name="energy_id" id="energy_id" required=""><label for="energy_id">id</label>
+            </div>
+            <div class="input-field col s6">
+                <input type="text" name="energy_intensity" id="energy_intensity" required="">
+                <label for="energy_intensity">Intensity</label>
+            </div>
+            <div class="input-field col s6">
+                <input type="text" name="energy_time_h_on" id="energy_time_h_on" required="">
+                <label for="energy_time_h_on">Time h on</label>
+            </div>
+            <div class="input-field col s6">
+                <input type="text" name="energy_time_m_on" id="energy_time_m_on" required="">
+                <label for="energy_time_m_on">Time m on</label>
+            </div>
+            <div class="input-field col s6">
+                <input type="text" name="energy_time_h_off" id="energy_time_h_off" required="">
+                <label for="energy_time_h_off">Time h off</label>
+            </div>
+            <div class="input-field col s6">
+                <input type="text" name="energy_time_m_off" id="energy_time_m_off" required="">
+                <label for="energy_time_m_off">Time m off</label>
+            </div>
+        </div>
+        <div class="row">
+            <button class="btn waves-effect waves-light" type="submit" id="energy_submit">Submit
+                <i class="material-icons right">send</i>
+            </button>
+        </div>
     </form>
+
 
     <p>Change Policy on</p>
-    <form id="policy_on_form">
-        <table>
-            <tr>
-                <td><input type="text" name="policy_on_id" id="policy_on_id" placeholder="id"></td>
-                <td><input type="text" name="policy_on_intensity" id="policy_on_intensity" placeholder="Intensity"></td>
-                <td><input type="text" name="policy_on_time_h" id="policy_on_time_h" placeholder="Time h"></td>
-                <td><input type="text" name="policy_on_time_m" id="policy_on_time_m" placeholder="Time m"></td>
-                <td><input type="text" name="policy_on_photoresistor" id="policy_on_photoresistor" placeholder="Photoresistor"></td>
-                <td><input type="submit" id="policy_on_submit" value="Submit!"/></td>
-            </tr>
-            <tr>
-                <td id ="policy_on_id_error"></td>
-                <td id ="policy_on_intensity_error"></td>
-                <td id ="policy_on_time_h_error"></td>
-                <td id ="policy_on_time_m_error"></td>
-                <td id ="policy_on_photoresistor_error"></td>
-            </tr>
-        </table>
+
+    <form id="policy_on_form" class="col s12" novalidate="novalidate">
+        <div class="row">
+            <div class="input-field col s6">
+                <input type="text" name="policy_on_id" id="policy_on_id" required="">
+                <label for="policy_on_id">id</label>
+            </div>
+            <div class="input-field col s6">
+                <input type="text" name="policy_on_intensity" id="policy_on_intensity" required="">
+                <label for="policy_on_intensity">Intensity</label>
+            </div>
+            <div class="input-field col s6">
+                <input type="text" name="policy_on_time_h" id="policy_on_time_h" required="">
+                <label for="policy_on_time_h">Time h</label>
+            </div>
+            <div class="input-field col s6">
+                <input type="text" name="policy_on_time_m" id="policy_on_time_m" required="">
+                <label for="policy_on_time_m">Time m</label>
+            </div>
+            <div class="input-field col s6">
+                <input type="text" name="policy_on_photoresistor" id="policy_on_photoresistor" required="">
+                <label for="policy_on_photoresistor">Photoresistor</label>
+            </div>
+        </div>
+        <div class="row">
+            <button class="btn waves-effect waves-light" type="submit" id="policy_on_submit">Submit
+                <i class="material-icons right">send</i>
+            </button>
+        </div>
     </form>
 
+
     <p>Change Policy off</p>
-    <form id="policy_off_form">
-        <table>
-            <tr>
-                <td><input type="text" name="policy_off_id" id="policy_off_id" placeholder="id"></td>
-                <td><input type="text" name="policy_off_time_h" id="policy_off_time_h" placeholder="Time h"></td>
-                <td><input type="text" name="policy_off_time_m" id="policy_off_time_m" placeholder="Time m"></td>
-                <td><input type="text" name="policy_off_photoresistor" id="policy_off_photoresistor" placeholder="Photoresistor"></td>
-                <td><input type="submit" id="policy_off_submit" value="Submit!"/></td>
-            </tr>
-            <tr>
-                <td id ="policy_off_id_error"></td>
-                <td id ="policy_off_time_h_error"></td>
-                <td id ="policy_off_time_m_error"></td>
-                <td id ="policy_off_photoresistor_error"></td>
-            </tr>
-        </table>
+    <form id="policy_off_form" class="col s12" novalidate="novalidate">
+        <div class="row">
+            <div class="input-field col s6">
+                <input type="text" name="policy_off_id" id="policy_off_id" required="">
+                <label for="policy_off_id">id</label>
+            </div>
+            <div class="input-field col s6">
+                <input type="text" name="policy_off_time_h" id="policy_off_time_h" required="">
+                <label for="policy_off_time_h">Time h</label>
+            </div>
+            <div class="input-field col s6">
+                <input type="text" name="policy_off_time_m" id="policy_off_time_m" required="">
+                <label for="policy_off_time_m">Time m</label>
+            </div>
+            <div class="input-field col s6">
+                <input type="text" name="policy_off_photoresistor" id="policy_off_photoresistor" required="">
+                <label for="policy_off_photoresistor">Photoresistor</label>
+            </div>
+        </div>
+        <div class="row">
+            <button class="btn waves-effect waves-light" type="submit" id="policy_off_submit">Submit
+                <i class="material-icons right">send</i>
+            </button>
+        </div>
     </form>
 
     <p>Get Policies</p>
-    <form id="get_form">
-        <table>
-            <tr>
-                <td><input type="text" name="policy_id" id="policy_id" placeholder="id"></td>
-                <td><input type="submit" id="get_submit" value="Submit!"/></td>
-            </tr>
-            <tr>
-                <td id="policy_id_error"></td>
-            </tr>
-        </table>
+    <form id="get_form" class="col s12" novalidate="novalidate">
+        <div class="row">
+            <div class="input-field col s6">
+                <input type="text" name="policy_id" id="policy_id" required="">
+                <label for="policy_id">id</label>
+            </div>
+        </div>
+        <div class="row">
+            <button class="btn waves-effect waves-light" type="submit" id="get_submit">Get
+                <i class="material-icons right">get_app</i>
+            </button>
+        </div>
     </form>
+
+    <ul id="staggered-test">
+        <li style="opacity: 0;">
+            <p>ID: <span class="lamp_id"></span></p>
+            <p><b>Policy</b></p>
+            <p>Intensity on: <span class="policy_on_intensity"></span></p>
+            <p>Time on: <span class="policy_on_time"></span></p>
+            <p>Time off: <span class="policy_off_time"></span></p>
+            <p>Photoresistor on: <span class="policy_on_photoresistor"></span></p>
+            <p>Photoresistor off: <span class="policy_off_photoresistor"></span></p>
+            <p><b>Energy Saving</b></p>
+            <p>Intensity: <span class="energy_intensity"></span></p>
+            <p>Time on: <span class="energy_on_time"></span></p>
+            <p>Time off: <span class="energy_off_time"></span></p>
+        </li>
+    </ul>
+</div>
+
 </div>
 </body>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script src="neverEnoughjQuery.js"></script>
+<script src="https://cdn.jsdelivr.net/jquery.validation/1.16.0/jquery.validate.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.98.0/js/materialize.min.js"></script>
+
 </html>
