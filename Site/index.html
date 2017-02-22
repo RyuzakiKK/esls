@@ -12,14 +12,17 @@
 </head>
 <body>
 <div class="container">
-    <p>Credential</p>
     <form id="login_form" class="col s12" novalidate="novalidate">
+        <p>Credential</p>
         <div class="row">
             <div class="input-field col s6">
                 <input type="text" name="Username" id="user" required=""><label for="user">User</label>
             </div>
             <div class="input-field col s6">
                 <input type="password" name="Password" id="password" required=""><label for="password">Password</label>
+            </div>
+            <div class="input-field col s6">
+                <input type="text" name="Address" id="address" required=""><label for="address">Address</label>
             </div>
             <input type="submit" style="display:none" name="submitButton">
         </div>
@@ -37,20 +40,12 @@
                 <label for="energy_intensity">Intensity</label>
             </div>
             <div class="input-field col s6">
-                <input type="text" name="energy_time_h_on" id="energy_time_h_on" required="">
-                <label for="energy_time_h_on">Time h on</label>
+                <input type="text" name="energy_time_on" id="energy_time_on" required="">
+                <label for="energy_time_on">Time hh:mm on</label>
             </div>
             <div class="input-field col s6">
-                <input type="text" name="energy_time_m_on" id="energy_time_m_on" required="">
-                <label for="energy_time_m_on">Time m on</label>
-            </div>
-            <div class="input-field col s6">
-                <input type="text" name="energy_time_h_off" id="energy_time_h_off" required="">
-                <label for="energy_time_h_off">Time h off</label>
-            </div>
-            <div class="input-field col s6">
-                <input type="text" name="energy_time_m_off" id="energy_time_m_off" required="">
-                <label for="energy_time_m_off">Time m off</label>
+                <input type="text" name="energy_time_off" id="energy_time_off" required="">
+                <label for="energy_time_off">Time hh:mm off</label>
             </div>
         </div>
         <div class="row">
@@ -74,12 +69,8 @@
                 <label for="policy_on_intensity">Intensity</label>
             </div>
             <div class="input-field col s6">
-                <input type="text" name="policy_on_time_h" id="policy_on_time_h" required="">
-                <label for="policy_on_time_h">Time h</label>
-            </div>
-            <div class="input-field col s6">
-                <input type="text" name="policy_on_time_m" id="policy_on_time_m" required="">
-                <label for="policy_on_time_m">Time m</label>
+                <input type="text" name="policy_on_time" id="policy_on_time" required="">
+                <label for="policy_on_time">Time hh:mm</label>
             </div>
             <div class="input-field col s6">
                 <input type="text" name="policy_on_photoresistor" id="policy_on_photoresistor" required="">
@@ -102,12 +93,8 @@
                 <label for="policy_off_id">id</label>
             </div>
             <div class="input-field col s6">
-                <input type="text" name="policy_off_time_h" id="policy_off_time_h" required="">
-                <label for="policy_off_time_h">Time h</label>
-            </div>
-            <div class="input-field col s6">
-                <input type="text" name="policy_off_time_m" id="policy_off_time_m" required="">
-                <label for="policy_off_time_m">Time m</label>
+                <input type="text" name="policy_off_time" id="policy_off_time" required="">
+                <label for="policy_off_time">Time hh:mm</label>
             </div>
             <div class="input-field col s6">
                 <input type="text" name="policy_off_photoresistor" id="policy_off_photoresistor" required="">
@@ -136,7 +123,7 @@
         </div>
     </form>
 
-    <ul id="staggered-test">
+    <ul id="staggered">
         <li style="opacity: 0;">
             <p>ID: <span class="lamp_id"></span></p>
             <p><b>Policy</b></p>
@@ -152,13 +139,12 @@
         </li>
     </ul>
 </div>
-
-</div>
 </body>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 <script src="neverEnoughjQuery.js"></script>
 <script src="https://cdn.jsdelivr.net/jquery.validation/1.16.0/jquery.validate.min.js"></script>
+<script src="https://cdn.jsdelivr.net/jquery.validation/1.16.0/additional-methods.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.98.0/js/materialize.min.js"></script>
 
 </html>

@@ -10,6 +10,7 @@ $(document).ready(function() {
     var energy_on_time = $('.energy_on_time');
     var energy_off_time =  $('.energy_off_time');
     var login_form = $('#login_form');
+    var port = ":9020";
 
     $(function() {
         $('#login_form').on('submit', function(e) {
@@ -36,6 +37,10 @@ $(document).ready(function() {
                 var user = document.getElementById("user").value;
                 var pass = document.getElementById("password").value;
                 var policy_id = document.getElementById("policy_id").value;
+                var address = document.getElementById("address").value;
+                if (address.length < 5 || address.substring(0, 4) != "http") {
+                    address = "https://" + address;
+                }
                 $.ajax({
                     type: "GET",
                     dataType: "json",
@@ -43,9 +48,8 @@ $(document).ready(function() {
                     headers: {
                         'Authorization': 'Basic ' + btoa(user + ':' + pass)
                     },
-                    url: "https://192.168.2.194:9020/esls/api/1.0/policies/" + policy_id,
+                    url: address + port + "/esls/api/1.0/policies/" + policy_id,
                     success: function(data){
-                        Materialize.showStaggeredList('#staggered-test');
                         lamp_id.empty();
                         lamp_id.append(data[0]);
                         policy_on_intensity.empty();
@@ -63,16 +67,18 @@ $(document).ready(function() {
                         energy_on_time.empty();
                         energy_on_time.append(data[3]['time_h_on'] + ':' + data[3]['time_m_on']);
                         energy_off_time.empty();
-                        energy_off_time.append(data[3]['time_h_off'] + ':' + data[3]['time_m_off'])
+                        energy_off_time.append(data[3]['time_h_off'] + ':' + data[3]['time_m_off']);
+                        Materialize.showStaggeredList('#staggered');
                     },
                     error: function(XMLHttpRequest, textStatus, errorThrown) {
                         Materialize.toast('ERROR HTTP ' + XMLHttpRequest.status, 4000, 'rounded');
-                        Materialize.showStaggeredList('#staggered-test'); //TEST
+                        $('#staggered').css({opacity: 0});
+                        console.log(XMLHttpRequest.status + " " + textStatus + " " + errorThrown);
                     }
                 });
             } else {
                 console.log("required fields!!");
-                login_form.find(':submit').click(); // Display the default "required" message
+                login_form.find(':submit').click(); // Check the Credential fields
             }
         });
     });
@@ -91,10 +97,15 @@ $(document).ready(function() {
             if (!fail) {
                 var user = document.getElementById("user").value;
                 var pass = document.getElementById("password").value;
+                var address = document.getElementById("address").value;
+                if (address.length < 5 || address.substring(0, 4) != "http") {
+                    address = "https://" + address;
+                }
                 var policy_id = document.getElementById("policy_on_id").value;
                 var policy_intensity = document.getElementById("policy_on_intensity").value;
-                var policy_h = document.getElementById("policy_on_time_h").value;
-                var policy_m = document.getElementById("policy_on_time_m").value;
+                var array_time = document.getElementById("policy_on_time").value.split(':');
+                var policy_h = array_time[0];
+                var policy_m = array_time[1];
                 var policy_photoresistor = document.getElementById("policy_on_photoresistor").value;
                 var data = {"intensity":policy_intensity,"time_h":policy_h,"time_m":policy_m,"photoresistor":policy_photoresistor};
                 data = JSON.stringify(data);
@@ -107,18 +118,19 @@ $(document).ready(function() {
                     headers: {
                         'Authorization': 'Basic ' + btoa(user + ':' + pass)
                     },
-                    url: "https://192.168.2.194:9020/esls/api/1.0/policies/lamp/" + policy_id + "/on",
+                    url: address + port + "/esls/api/1.0/policies/lamp/" + policy_id + "/on",
                     success: function(msg){
-                        alert( "Data Saved: " + msg );
-                        Materialize.toast('Data saved!', 4000, 'rounded')
+                        Materialize.toast('Data saved!', 4000, 'rounded');
+                        console.log(msg);
                     },
                     error: function(XMLHttpRequest, textStatus, errorThrown) {
-                        Materialize.toast('ERROR HTTP ' + XMLHttpRequest.status, 4000, 'rounded')
+                        Materialize.toast('ERROR HTTP ' + XMLHttpRequest.status, 4000, 'rounded');
+                        console.log(XMLHttpRequest.status + " " + textStatus + " " + errorThrown);
                     }
                 });
             } else {
                 console.log("required fields!!");
-                login_form.find(':submit').click(); // Display the default "required" message
+                login_form.find(':submit').click(); // Check the Credential fields
             }
         });
     });
@@ -137,9 +149,14 @@ $(document).ready(function() {
             if (!fail) {
                 var user = document.getElementById("user").value;
                 var pass = document.getElementById("password").value;
+                var address = document.getElementById("address").value;
+                if (address.length < 5 || address.substring(0, 4) != "http") {
+                    address = "https://" + address;
+                }
                 var policy_id = document.getElementById("policy_off_id").value;
-                var policy_h = document.getElementById("policy_off_time_h").value;
-                var policy_m = document.getElementById("policy_off_time_m").value;
+                var array_time = document.getElementById("policy_off_time").value.split(':');
+                var policy_h = array_time[0];
+                var policy_m = array_time[1];
                 var policy_photoresistor = document.getElementById("policy_off_photoresistor").value;
                 var data = {"time_h":policy_h,"time_m":policy_m,"photoresistor":policy_photoresistor};
                 data = JSON.stringify(data);
@@ -152,18 +169,19 @@ $(document).ready(function() {
                     headers: {
                         'Authorization': 'Basic ' + btoa(user + ':' + pass)
                     },
-                    url: "https://192.168.2.194:9020/esls/api/1.0/policies/lamp/" + policy_id + "/off",
+                    url: address + port + "/esls/api/1.0/policies/lamp/" + policy_id + "/off",
                     success: function(msg){
-                        alert( "Data Saved: " + msg );
-                        Materialize.toast('Data saved!', 4000, 'rounded')
+                        Materialize.toast('Data saved!', 4000, 'rounded');
+                        console.log(msg);
                     },
                     error: function(XMLHttpRequest, textStatus, errorThrown) {
-                        Materialize.toast('ERROR HTTP ' + XMLHttpRequest.status, 4000, 'rounded')
+                        Materialize.toast('ERROR HTTP ' + XMLHttpRequest.status, 4000, 'rounded');
+                        console.log(XMLHttpRequest.status + " " + textStatus + " " + errorThrown);
                     }
                 });
             } else {
                 console.log("required fields!!");
-                login_form.find(':submit').click(); // Display the default "required" message
+                login_form.find(':submit').click(); // Check the Credential fields
             }
         });
     });
@@ -182,12 +200,18 @@ $(document).ready(function() {
             if (!fail) {
                 var user = document.getElementById("user").value;
                 var pass = document.getElementById("password").value;
+                var address = document.getElementById("address").value;
+                if (address.length < 5 || address.substring(0, 4) != "http") {
+                    address = "https://" + address;
+                }
                 var energy_id = document.getElementById("energy_id").value;
                 var energy_intensity = document.getElementById("energy_intensity").value;
-                var energy_h_on = document.getElementById("energy_time_h_on").value;
-                var energy_m_on = document.getElementById("energy_time_m_on").value;
-                var energy_h_off = document.getElementById("energy_time_h_off").value;
-                var energy_m_off = document.getElementById("energy_time_m_off").value;
+                var array_time_on = document.getElementById("energy_time_on").value.split(':');
+                var energy_h_on = array_time_on[0];
+                var energy_m_on = array_time_on[1];
+                var array_time_off = document.getElementById("energy_time_off").value.split(':');
+                var energy_h_off = array_time_off[0];
+                var energy_m_off = array_time_off[1];
                 var data = {"intensity":energy_intensity,"time_h_on":energy_h_on,"time_m_on":energy_m_on,"time_h_off":energy_h_off,"time_m_off":energy_m_off};
                 data = JSON.stringify(data);
                 console.log(data);
@@ -199,18 +223,19 @@ $(document).ready(function() {
                     headers: {
                         'Authorization': 'Basic ' + btoa(user + ':' + pass)
                     },
-                    url: "https://192.168.2.194:9020/esls/api/1.0/policies/lamp/" + energy_id + "/energy",
+                    url: address + port + "/esls/api/1.0/policies/lamp/" + energy_id + "/energy",
                     success: function(msg){
-                        alert( "Data Saved: " + msg );
-                        Materialize.toast('Data saved!', 4000, 'rounded')
+                        Materialize.toast('Data saved!', 4000, 'rounded');
+                        console.log(msg);
                     },
                     error: function(XMLHttpRequest, textStatus, errorThrown) {
-                        Materialize.toast('ERROR HTTP ' + XMLHttpRequest.status, 4000, 'rounded')
+                        Materialize.toast('ERROR HTTP ' + XMLHttpRequest.status, 4000, 'rounded');
+                        console.log(XMLHttpRequest.status + " " + textStatus + " " + errorThrown);
                     }
                 });
             } else {
                 console.log("required fields!!");
-                login_form.find(':submit').click(); // Display the default "required" message
+                login_form.find(':submit').click(); // Check the Credential fields
             }
         });
     });
@@ -236,6 +261,9 @@ $(document).ready(function() {
             },
             password: {
                 required: true
+            },
+            address: {
+                required: true
             }
         },
         messages: {
@@ -244,6 +272,9 @@ $(document).ready(function() {
             },
             password: {
                 required: "Password required"
+            },
+            address: {
+                required: "Address required"
             }
         }
     });
@@ -269,13 +300,9 @@ $(document).ready(function() {
                 required: true,
                 number: true
             },
-            policy_off_time_h: {
+            policy_off_time: {
                 required: true,
-                range: [0, 23]
-            },
-            policy_off_time_m: {
-                required: true,
-                range: [0, 59]
+                time: true
             },
             policy_off_photoresistor: {
                 required: true,
@@ -287,13 +314,9 @@ $(document).ready(function() {
                 required: "Policy id required",
                 number: "Only number allowed"
             },
-            policy_off_time_h: {
-                required: "Time h required",
-                range: "Must be a number in range 0-23"
-            },
-            policy_off_time_m: {
-                required: "Time m required",
-                range: "Must be a number in range 0-59"
+            policy_off_time: {
+                required: "Time required",
+                time: "Must be of the format hh:mm"
             },
             policy_off_photoresistor: {
                 required: "Photoresistor required",
@@ -312,13 +335,9 @@ $(document).ready(function() {
                 required: true,
                 range: [0, 100]
             },
-            policy_on_time_h: {
+            policy_on_time: {
                 required: true,
-                range: [0, 23]
-            },
-            policy_on_time_m: {
-                required: true,
-                range: [0, 59]
+                time: true
             },
             policy_on_photoresistor: {
                 required: true,
@@ -334,13 +353,9 @@ $(document).ready(function() {
                 required: "Intensity required",
                 range: "Must be a number in range 0-100"
             },
-            policy_on_time_h: {
+            policy_on_time: {
                 required: "Time h required",
-                range: "Must be a number in range 0-23"
-            },
-            policy_on_time_m: {
-                required: "Time m required",
-                range: "Must be a number in range 0-59"
+                time: "Must be of the format hh:mm"
             },
             policy_on_photoresistor: {
                 required: "Photoresistor required",
@@ -359,21 +374,13 @@ $(document).ready(function() {
                 required: true,
                 range: [0, 100]
             },
-            energy_time_h_on: {
+            energy_time_on: {
                 required: true,
-                range: [0, 23]
+                time: true
             },
-            energy_time_m_on: {
+            energy_time_off: {
                 required: true,
-                range: [0, 59]
-            },
-            energy_time_h_off: {
-                required: true,
-                range: [0, 23]
-            },
-            energy_time_m_off: {
-                required: true,
-                range: [0, 59]
+                time: true
             }
         },
         messages: {
@@ -385,21 +392,13 @@ $(document).ready(function() {
                 required: "Intensity required",
                 range: "Must be a number in range 0-100"
             },
-            energy_time_h_on: {
+            energy_time_on: {
                 required: "Time h required",
-                range: "Must be a number in range 0-23"
+                time: "Must be of the format hh:mm"
             },
-            energy_time_m_on: {
-                required: "Time m required",
-                range: "Must be a number in range 0-59"
-            },
-            energy_time_h_off: {
+            energy_time_off: {
                 required: "Time h required",
-                range: "Must be a number in range 0-23"
-            },
-            energy_time_m_off: {
-                required: "Time m required",
-                range: "Must be a number in range 0-59"
+                time: "Must be of the format hh:mm"
             }
         }
     });
