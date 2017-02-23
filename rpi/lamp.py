@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import json
 import threading
-
+import logging
 import pykka
 import ledPWM
 from urllib.parse import urlencode
@@ -23,7 +23,7 @@ time_h=6 photoresistor=60 -> switch off
 '''
 # no need for a lock because everything here is single thread
 
-
+logger = logging.getLogger(__name__)
 action = Enum('action', 'turn_on turn_off energy_saving car_detected')
 error = Enum('error', 'generic')
 
@@ -66,9 +66,8 @@ class Lamp(pykka.ThreadingActor):
                                              self.lamp_energy.time_h_off, self.lamp_energy.time_m_off, 0)
 
     def start_schedule_on(self):
-        today = datetime.today()
-        wait_t = self.get_delta(today.hour, today.minute, today.second, self.lamp_policy_on.time_h,
-                                self.lamp_policy_on.time_m, 0)
+        wait_t = self.get_wait(self.lamp_policy_on.time_h, self.lamp_policy_on.time_m, 0,
+                               self.lamp_policy_off.time_h, self.lamp_policy_off.time_m, 0)
         print(wait_t)
         self.timer_on.cancel()
         self.timer_on = threading.Timer(wait_t, self.pr_proxy.add_actor, [self.my_proxy])
@@ -76,9 +75,8 @@ class Lamp(pykka.ThreadingActor):
         self.start_time_on = datetime.today() + timedelta(seconds=wait_t)
 
     def start_schedule_energy_on(self):
-        today = datetime.today()
-        wait_t = self.get_delta(today.hour, today.minute, today.second, self.lamp_energy.time_h_on,
-                                self.lamp_energy.time_m_on, 0)
+        wait_t = self.get_wait(self.lamp_energy.time_h_on, self.lamp_energy.time_m_on, 0,
+                               self.lamp_energy.time_h_off, self.lamp_energy.time_m_off, 0)
         self.timer_energy_on_1.cancel()
         self.timer_energy_on_1 = threading.Timer(wait_t, self.us_proxy_1.add_actor, [self.my_proxy])
         self.timer_energy_on_1.start()
@@ -96,27 +94,31 @@ class Lamp(pykka.ThreadingActor):
                 if self.on and current_photoresistor > self.lamp_policy_off.photoresistor:
                     self.timer_energy_timeout.cancel()
                     ledPWM.set_led_intensity(self.pin, 0)
-                    print("lamp off")
+                    logger.info("lamp off")
                     self.on = False
-                    self.send_post(action.turn_off.value, 0, current_photoresistor)
+                    # self.send_post(action.turn_off.value, 0, current_photoresistor)
                 elif not self.on and current_photoresistor < self.lamp_policy_on.photoresistor:
                     if self.is_energy_saving_time():
                         ledPWM.set_led_intensity(self.pin, self.lamp_energy.intensity)
-                        print("lamp on")
+                        logger.info("lamp on")
                         self.on = True
-                        self.send_post(action.energy_saving.value, self.lamp_energy.intensity, current_photoresistor)
+                        # self.send_post(action.energy_saving.value, self.lamp_energy.intensity, current_photoresistor)
                     else:
                         ledPWM.set_led_intensity(self.pin, self.lamp_policy_on.intensity)
-                        print("lamp on")
+                        logger.info("lamp on")
                         self.on = True
-                        self.send_post(action.turn_on.value, self.lamp_policy_on.intensity, current_photoresistor)
+                        # self.send_post(action.turn_on.value, self.lamp_policy_on.intensity, current_photoresistor)
             else:
-                print("schedule is over, see you tomorrow")
+                logger.info("schedule is over, see you tomorrow")
+                ledPWM.set_led_intensity(self.pin, 0)
+                logger.info("lamp off")
+                self.on = False
                 self.pr_proxy.remove_actor(self.my_proxy)
-                self.send_post(action.turn_off.value, 0, current_photoresistor)
+                # self.send_post(action.turn_off.value, 0, current_photoresistor)
                 self.start_schedule_on()
 
     def ultrasonic_notify(self, us_timeout, wait_time, right_lane, notified=False):
+        logger.info("[{0}]Received an ultrasonic notify".format(self.lamp_id))
         if not self.debug:
             if self.is_in_schedule() and self.is_energy_saving_time():
                 if self.on:
@@ -129,15 +131,15 @@ class Lamp(pykka.ThreadingActor):
                     # If this is the last lamp and we were not notified, we notify the nearest rpi
                     if position == self.lamp_number and not notified:
                         from main import notify_nearby
-                        threading.Timer(wait_time * position, notify_nearby, right_lane)
-                    threading.Timer(wait_time * position, self.car_detected)
-                    print("There is a car! Lamp full power")
+                        threading.Timer(wait_time * position, notify_nearby, [right_lane]).start()
+                    threading.Timer(wait_time * position, self.car_detected).start()
+                    logger.info("[{0}]There is a car! Lamp full power".format(self.lamp_id))
                     self.timer_energy_timeout.cancel()
                     self.timer_energy_timeout = threading.Timer(us_timeout + wait_time * position, self.set_to_energy)
                     self.timer_energy_timeout.start()
             else:
                 self.timer_energy_timeout.cancel()
-                print("schedule is over, see you tomorrow")
+                logger.info("schedule is over, see you tomorrow")
                 self.us_proxy_1.remove_actor(self.my_proxy)
                 self.us_proxy_2.remove_actor(self.my_proxy)
                 self.start_schedule_energy_on()
@@ -153,11 +155,13 @@ class Lamp(pykka.ThreadingActor):
 
     def car_detected(self):
         ledPWM.set_led_intensity(self.pin, self.lamp_policy_on.intensity)
-        self.send_post(action.car_detected.value, self.lamp_policy_on.intensity)
+        logger.info("{0} Car detected".format(ledPWM.get_led_intensity(self.pin)))  # debug
+        # self.send_post(action.car_detected.value, self.lamp_policy_on.intensity)
 
     def set_to_energy(self):
         ledPWM.set_led_intensity(self.pin, self.lamp_energy.intensity)
-        self.send_post(action.energy_saving.value, self.lamp_energy.intensity)
+        logger.info("{0} Set to energy".format(ledPWM.get_led_intensity(self.pin)))  # debug
+        # self.send_post(action.energy_saving.value, self.lamp_energy.intensity)
 
     def to_json(self):
         return json.dumps([self.lamp_id, self.lamp_policy_on, self.lamp_policy_off, self.lamp_energy],
@@ -177,23 +181,25 @@ class Lamp(pykka.ThreadingActor):
         today = datetime.today()
         start = today.replace(hour=start_h, minute=start_m, second=start_s)
         end = today.replace(hour=end_h, minute=end_m, second=end_s)
-        if (start - today).total_seconds() > 1:
-            return (start - today).total_seconds()
         if (end - start).total_seconds() < 1:
             end = end.replace(day=end.day + 1)
         if (end - start).total_seconds() > 24*60*60:
             start = start.replace(day=start.day + 1)
         if (today - end).total_seconds() > 1:
             start = start.replace(day=start.day + 1)
+        tomorrow = today.replace(day=today.day + 1)
+        if (start - tomorrow).total_seconds() < 1 < (end - tomorrow).total_seconds():
+            today = today.replace(day=today.day + 1)
         return (start - today).total_seconds()
 
     def is_in_schedule(self):
         now = datetime.today()
         elapsed = (now - self.start_time_on).total_seconds()
+        logger.info("elapsed {0} seconds, timeout is {1}".format(elapsed, self.timeout_on_off))
         return elapsed < self.timeout_on_off
 
     def is_energy_saving_time(self):
         now = datetime.today()
         elapsed = (now - self.start_time_energy_on).total_seconds()
-        print("Are we in energy saving? " + str(elapsed < self.timeout_energy))
-        return elapsed < self.timeout_energy
+        logger.debug("Are we in energy saving? " + str(0 < elapsed < self.timeout_energy))
+        return 0 < elapsed < self.timeout_energy

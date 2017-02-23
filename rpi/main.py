@@ -6,6 +6,7 @@ import os.path
 import ssl
 from distutils.util import strtobool
 
+import logging
 from flask import Flask, jsonify, abort, make_response, request
 from flask_httpauth import HTTPBasicAuth
 from flask_cors import CORS
@@ -18,6 +19,7 @@ from photoresistor import Photoresistor
 from ultrasonic import Ultrasonic
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
+from pykka import ThreadingActor
 
 app = Flask(__name__)
 auth = HTTPBasicAuth()
@@ -49,7 +51,7 @@ readers = 0
 want_to_write = 0
 lamp_number = 0
 old_intensity = {}
-neighbors = []
+neighbors = [[], []]
 
 
 @auth.get_password
@@ -137,8 +139,8 @@ def set_lamp_policy_on(lamp_id):
                 config[LAMP_POLICY_ON][TIME_H] = str(new_h_on)
                 config[LAMP_POLICY_ON][TIME_M] = str(new_m_on)
                 config[LAMP_POLICY_ON][PHOTORESISTOR] = str(new_photoresistor)
-                post_fields = {'area': config['GENERAL']['lamp_area'], 'timestamp': '0'}
-                send_post(SERVER_URL, post_fields)
+                # post_fields = {'area': config['GENERAL']['lamp_area'], 'timestamp': '0'}
+                # send_post(SERVER_URL, post_fields)
                 with open(PATH_LIGHTS + str(lamp_id) + EXTENSION, 'w') as configfile:
                     config.write(configfile)
                 return jsonify({"result": "ok"}), 200
@@ -177,8 +179,8 @@ def set_lamp_policy_off(lamp_id):
                 config[LAMP_POLICY_OFF][TIME_H] = str(new_h_off)
                 config[LAMP_POLICY_OFF][TIME_M] = str(new_m_off)
                 config[LAMP_POLICY_OFF][PHOTORESISTOR] = str(new_photoresistor)
-                post_fields = {'area': config['GENERAL']['lamp_area'], 'timestamp': '0'}
-                send_post(SERVER_URL, post_fields)
+                # post_fields = {'area': config['GENERAL']['lamp_area'], 'timestamp': '0'}
+                # send_post(SERVER_URL, post_fields)
                 with open(PATH_LIGHTS + str(lamp_id) + EXTENSION, 'w') as configfile:
                     config.write(configfile)
                 return jsonify({"result": "ok"}), 200
@@ -220,8 +222,8 @@ def set_energy_saving(lamp_id):
                 config[LAMP_ENERGY_SAVING][TIME_M_ON] = str(new_m_on)
                 config[LAMP_ENERGY_SAVING][TIME_H_OFF] = str(new_h_off)
                 config[LAMP_ENERGY_SAVING][TIME_M_OFF] = str(new_m_off)
-                post_fields = {'area': config['GENERAL']['lamp_area'], 'timestamp': '0'}
-                send_post(SERVER_URL, post_fields)
+                # post_fields = {'area': config['GENERAL']['lamp_area'], 'timestamp': '0'}
+                # send_post(SERVER_URL, post_fields)
                 with open(PATH_LIGHTS + str(lamp_id) + EXTENSION, 'w') as configfile:
                     config.write(configfile)
                 return jsonify({"result": "ok"}), 200
@@ -457,12 +459,15 @@ def load_neighbors_ini():
 
 
 def notify_nearby(right_lane):
+    logging.info(right_lane)
     i = 1 if right_lane else 0
     for nearby in neighbors[i]:
-        send_post(nearby, right_lane)
+        logging.info(nearby)  # TODO TEST
+        send_post(nearby, {'right_lane': right_lane})
 
 
 def main():
+    ThreadingActor.use_daemon_thread = True
     pr_proxy = Photoresistor.start().proxy()
     us_proxy_1 = Ultrasonic.start(1, 2, True, 1).proxy()
     us_proxy_2 = Ultrasonic.start(1, 2, False, 1).proxy()
@@ -474,10 +479,11 @@ def main():
     password = config['DEFAULT']['Pass']
     load_lights_ini(pr_proxy, us_proxy_1, us_proxy_2)
     load_neighbors_ini()
+    context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)  # PROTOCOL_SSLv23 is an alias for PROTOCOL_TLS
+    context.load_cert_chain('DO.crt', 'DO.key')
+    app.run(threaded=True, host='192.168.2.194', port=9020, ssl_context=context)
 
 
 if __name__ == '__main__':
     main()
-    context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)  # PROTOCOL_SSLv23 is an alias for PROTOCOL_TLS
-    context.load_cert_chain('DO.crt', 'DO.key')
-    app.run(threaded=True, host='192.168.2.194', port=9020, ssl_context=context)
+
