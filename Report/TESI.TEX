@@ -1,19 +1,11 @@
 \documentclass[12pt,a4paper]{book}
 
-
-               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-               %    Scelta dei package da usare     %
-               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 \usepackage[italian]{babel}
-%\usepackage[latin1]{inputenc}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{amsmath,amsfonts,amssymb,amsthm}
 \usepackage{deistesi}
 \usepackage{fancyhdr}
-
-
 
 \usepackage[final]{listings}
 \usepackage[table]{xcolor}
@@ -46,64 +38,29 @@ frame=single,
   rulecolor=\color{black}
 }
 
-
-               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-               % Scelta delle dimensioni della pagina %
-               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 \setlength{\textwidth}{13.5cm}
 \setlength{\textheight}{19cm}
 \setlength{\footskip}{3cm}
 \setlength{\headheight}{15pt}
 \oddsidemargin=50pt \evensidemargin=20pt
 
-
-               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-               %  Informazioni generali sulla Tesi  %
-               %    da usare nell'intestazione      %
-               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\titolo{Un Distributore Intelligente di Bevande alla Spina con Sistema di Pagamento basato su Bitcoin}
-\laureando{Ludovico de Nittis}
-\annoaccademico{2014--2015}
+\titolo{ESLS: Esls Smart Light System}
+\laureando{Ludovico de Nittis\\Eugenio Severi}
+\annoaccademico{2016--2017}
 \facolta{CAMPUS DI CESENA\\SCUOLA DI SCIENZE}
 \corsodilaurea{Ingegneria e Scienze Informatiche}
-\corso{Programmazione di Sistemi Embedded}
-\relatore{Alessandro Ricci}
+\corso{\\Ingegneria dei Sistemi Software Adattativi Complessi\\Smart City}
+%\relatore{.}
 %\correlatorea[]{}
 %\correlatoreb[]{Pablo Neruda}
 \parolechiave{Bitcoin}{IoT}{Raspberry Pi}{Vending Machine}{Distributore Intelligente}
-\dedica{\textit{"Computers are like Old Testament gods; lots of rules and no mercy." - Joseph Campbell}}
-               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-               % Fine Preambolo %
-               % Inizio tesi     %
-               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
- \sessione{II}
-               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-               % Fine Preambolo %
-               % Inizio tesi     %
-               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\dedica{\textit{"Computers are like Old Testament gods; lots of rules and no mercy." - Joseph Campbell}}
 
 \begin{document}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%
-% inizio prefazione
-%
-% pagina del titolo, indice, sommario
-%%%%%%%%%%%%%%%%%%%%%%%%%
 \frontmatter \maketitle \pagestyle{plain} \tableofcontents
-%``testo''
 
 \input{introduzione.tex}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%
-% inizio corpo del documento
-%
-% sequenze dei vari capitoli
-% è consigliato mantenere una struttura logica ben definita per separare i vari capitoli
-% si consiglia di reificare tale struttura fisicamente sul file system
-%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \mainmatter
 
@@ -112,35 +69,19 @@ frame=single,
 
 % inclusione dei capitoli
 \input{capitolo1.tex}
-
+\input{capitolo3.tex}
 
 
 %\chapter*{Ringraziamenti}
 
-
-
 %\appendix
 
-% inclusione dei capitoli
-%\input{./Capitolo2/capitolo2.tex}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%
-% inizio parte finale del documento
-%
-% eventuali appendici, bibliografia obbligatoria,
-% eventuale lista delle tabelle e delle figure (nel caso decommentare la riga con i comandi \listoffigures e \listoftables)
-%%%%%%%%%%%%%%%%%%%%%%%%%
 \backmatter
 
-
-%\input{./Appendice/appendice.tex}
-% \input{./Bibliografia/bibliografia.tex}
-
 \listoffigures
-\bibliography{biblio}
+%\bibliography{biblio}
 \bibliographystyle{abbrv}
 
 %\listoftables
 
-% chiusura del documento
 \end{document}

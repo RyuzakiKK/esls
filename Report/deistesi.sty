@@ -44,7 +44,7 @@
 \newcommand{\@laureando}{?}
 \newcommand{\@parolechiave}{?}
 \newcommand{\@dedica}{?}
-\newcommand{\@sessione}{?}
+%\newcommand{\@sessione}{?}
 
 \newcommand{\facolta}[1]{
   \renewcommand{\@facolta}{#1}}
@@ -56,8 +56,8 @@
   \renewcommand{\@titolo}{\uppercase{#1}}}
 \newcommand{\annoaccademico}[1]{%
   \renewcommand{\@annoaccademico}{#1}}
-\newcommand{\relatore}[2][Prof.]{%
-  \renewcommand{\@relatore}{#1 \uppercase{#2}}}
+\newcommand{\relatore}[1]{%
+  \renewcommand{\@relatore}{#1}}
 %\newcommand{\correlatorea}[2][Ing]{%
 %  \renewcommand{\@correlatorea}{#1  \uppercase{#2}}}
 %\newcommand{\correlatoreb}[2][Ing]{%
@@ -68,8 +68,8 @@
   \renewcommand{\@parolechiave}{#1\\ \medskip #2\\ \medskip #3\\ \medskip #4\\ \medskip #5}}
 \newcommand{\dedica}[1]{%
   \renewcommand{\@dedica}{#1}}
-\newcommand{\sessione}[1]{%
-   \renewcommand{\@sessione}{#1}}
+%\newcommand{\sessione}[1]{%
+%   \renewcommand{\@sessione}{#1}}
 
 \newcommand{\clearemptydoublepage}{\newpage{\pagestyle{empty}%
   \cleardoublepage}}
@@ -115,11 +115,11 @@
   \vspace{2ex} 
   \begin{multicols}{2}
     \raggedright
-    \emph{Tesi di Laurea di}:\\ \@laureando\\
+    \emph{Progetto di}:\\ \@laureando\\
     \columnbreak
     \raggedleft
-    \emph{Relatore}:\\
-     \@relatore\\
+    \emph\\
+     %\@relatore\\
      \vspace{2pt}
     %\emph{Co-relatori}:\\
      %\@correlatorea\\
@@ -129,7 +129,7 @@
   \rule{9cm}{.4pt}\\
   \medskip
   \uppercase{Anno Accademico \@annoaccademico}\\
-  \uppercase {Sessione \@sessione}
+  %\uppercase {Sessione \@sessione}
   \end{large}
   \end{center}
   }
