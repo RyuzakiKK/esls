@@ -3,22 +3,6 @@
 In questo capitolo viene descritta l'architettura del progetto, derivata dall'analisi dei requisiti.
 
 \section{Architettura del sistema}
-
-\iffalse
-Il progetto è stato diviso in tre macro parti e in diverse sottoparti: 
-\begin{itemize}
-	\item Una parte in esecuzione su un sistema embedded, suddiviso in:
-	\begin{itemize}
-		\item Rilevamento illuminazione ambientale con il sensore di luce
-		\item Rilevamento presenza di automobili con i sensori di prossimità
-		\item L'illuminazione di ogni singolo lampione in base alle politiche locali 
-		\item Il programma principale che gestisce il web server REST e l'invio delle statistiche al server
-	\end{itemize}
-	\item Un web server accessibile dagli addetti ai lavori per permettere di leggere e modificare le policy dei singoli lampioni
-	\item Una parte in esecuzione su un server che ??
-\end{itemize}
-\fi
-
 Il sistema è costituito da due macro parti:
 \begin{itemize}
  \item un server che costituisce il punto di centralizzazione;
@@ -137,4 +121,4 @@ La soluzione più scalabile e consigliata è quella di installare i vari servizi
 \end{figure}
 \subsection{Layer di smistamento}
 Un'ulteriore soluzione prevede di utilizzare un layer di smistamento, installando più istanze della servlet su server diversi. In questo modo il nucleo del traffico non convergerebbe direttamente sul server centrale, ma verrebbe smistato precedentemente, facendo attività di load balancing. Inoltre, in caso di problemi con un'istanza specifica della servlet, solo i Raspberry direttamente collegati ad essa ne risentirebbero.
-TODO: fare immagine?
+TODO: immagine
