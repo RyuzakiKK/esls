@@ -6,9 +6,9 @@ In questo capitolo viene descritta l'architettura del progetto, derivata dall'an
 Il sistema è costituito da due macro parti:
 \begin{itemize}
  \item un server che costituisce il punto di centralizzazione;
- \item un insieme di dispositivi Raspberry Pi che dialogano con il server.
+ \item un insieme di dispositivi embedded che dialogano con il server.
 \end{itemize}
-I Raspberry hanno un comportamento locale, ovvero gestito individualmente da ogni Raspberry, e uno globale, cioè che richiede interazioni con il server centrale. Quest'ultima parte costituisce l'elemento di maggiore criticità, in quanto la quasi totalità delle interazioni si concentra sul server. Per far fronte ai requisiti di performance, reattività, scalabilità, facilità di gestione e interoperabilità, si è scelto di adottare REST come strategia di comunicazione, poiché possiede le seguenti caratteristiche fondamentali:
+I dispositivi embedded hanno un comportamento locale, ovvero gestito individualmente da ognuno, e uno globale, cioè che richiede interazioni con il server centrale. Quest'ultima parte costituisce l'elemento di maggiore criticità, in quanto la quasi totalità delle interazioni si concentra sul server. Per far fronte ai requisiti di performance, reattività, scalabilità, facilità di gestione e interoperabilità, si è scelto di adottare REST come strategia di comunicazione, poiché possiede le seguenti caratteristiche fondamentali:
 \begin{itemize}
  \item la comunicazione è di tipo client-server come richiesto;
  \item la comunicazione è ``stateless'', ovvero non necessita della memorizzazione di alcun contesto client sul server;
@@ -16,10 +16,61 @@ I Raspberry hanno un comportamento locale, ovvero gestito individualmente da ogn
  \item è universalmente riconosciuta e supportata, basandosi su HTTP + TCP + IP.
 \end{itemize}
 \subsection{Nota sull'utilizzo dei Raspberry PI}
-Nella realizzazione di questo progetto si è scelto di utilizzare dispositivi Raspberry PI, in quanto largamente noti e utilizzati. Anche altre tipologie di sistemi embedded possono essere utilizzati senza problemi, compresi microcontrollori. In questo modo si potrebbero ridurre i costi.
+Nella realizzazione di questo progetto si è scelto di utilizzare dispositivi Raspberry PI come dispositivi embedded, in quanto largamente noti e utilizzati. Da qui in avanti si parlerà di Raspberry, tuttavia anche altre tipologie di sistemi embedded possono essere utilizzate senza problemi, compresi microcontrollori. In questo modo si potrebbero ridurre i costi.
 
 
 \section{Progettazione Server}
+Il server (o il cluster di server, a seconda dell'implementazione) deve fornire i seguenti servizi:
+\begin{itemize}
+ \item un server web che fornirà un'interfaccia centralizzata per l'invio di comandi ai Raspberry;
+ \item una servlet che si occuperà di ricevere attraverso un'interfaccia REST messaggi provenienti dai Raspberry, che funge da intermediaria tra i Raspberry e i database;
+ \item un Time Series DBMS sul quale sono registrati i cambiamenti di stato segnalati dalla servlet;
+ \item un sistema di generazione di statistiche e grafici basati sui dati contenuti nel Time Series DBMS;
+ \item un DBMS relazionale per l'archiviazione di credenziali d'accesso e indice dei Raspberry che fanno parte del sistema;
+\end{itemize}
+
+\subsection{Tipologia del server}
+Poiché la parte server ricopre un ruolo centrale nel sistema, è necessario valutare le alternative a disposizione, per poi scegliere quella più idonea:
+\begin{itemize}
+ \item acquisto di server dedicati;
+ \item server cloud di tipo ``Infrastructure as a Service'' (IaaS);
+ \item server cloud di tipo ``Platform as a Service'' (PaaS).
+\end{itemize}
+\paragraph{Acquisto di server dedicati}
+Una prima possibilità è quella di acquistare server dedicati. Questa modalità prevede un investimento iniziale maggiore e richiede di gestire direttamente tutti i costi di gestione nel tempo, quali elettricità, sistemi di raffreddamento, gruppi di continuità, sostituzione dei componenti difettosi, impiego di personale specializzato. Questo potrebbe essere un problema nel caso i server da gestire (compresi anche quelli non collegati a questo sistema) fossero pochi, in quanto i costi difficilmente sarebbero ammortizzati. Ma soprattutto, le necessità in termini di prestazioni in un sistema di questo tipo possono essere molto variabili con il crescere del sistema stesso. Una città che optasse per l'acquisto di server dedicati, dovrebbe necessariamente acquistarli con prestazioni sovradimensionate rispetto all'utilizzo iniziale, in previsione dell'utilizzo a regime.
+\paragraph{Server cloud IaaS}
+Una seconda possibilità è quella di affidarsi ad un provider di servizi cloud ``IaaS'', che consentirebbe allo stesso tempo di spostare i costi di gestione e manutenzione del server all'interno di un datacenter. Sarebbe comunque necessario un sistemista per l'installazione e la manutenzione regolare del software del server, a partire dal sistema operativo. Inoltre, diventa possibile un rapido ridimensionamento delle risorse hardware allocate ai server, per far fronte alle richieste crescenti nel tempo (ipotizzando che i Raspberry vengano installati in maniera progressiva), riducendo i costi iniziali.
+\paragraph{Server Cloud PaaS}
+Utilizzando server cloud ``PaaS'', l'astrazione si sposta di un livello verso l'alto, in quando si rimuove la necessità di gestire il sistema operativo, focalizzandosi solo sui servizi. In questo modo si semplifica ulteriormente la gestione, a costo di una minore configurabilità dei servizi (si è molto più soggetti all'offerta del provider scelto).
+\paragraph{Scelta finale}
+Valutate le alternative, si è deciso di scartare l'acquisto di server dedicati, poiché si è ritenuto importante consentire il rapido ridimensionamento delle risorse hardware dedicate, garantendo scalabilità. Tra le due soluzioni ``IaaS'' e ``PaaS'' si è scelta la prima, in quanto le attuali proposte ``Paas'' sul mercato sono state ritenute troppo limitanti nelle funzionalità per il tipo di sistema che si vuole realizzare.
+
+\subsection{Server Web}
+TODO
+%\begin{figure}[ht] % Nota: immagine già messa sotto nel rasp
+%	\centering
+%	\includegraphics[scale=.8]{figure/Sequence_Diagram_WebServer.png}
+%	\caption{Diagramma di sequenza delle comunicazioni tra  \label{FSM POLICY}}
+%\end{figure}
+\subsection{Servlet}
+TODO
+\iffalse
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=.8]{figure/Class_Diagram_Server_REST.png}
+	\caption{API REST Servlet \label{API REST SERVLET}}
+\end{figure}
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=.8]{figure/Sequence_Diagram_rpi_to_server.png}
+	\caption{Diagramma di sequenza delle comunicazioni tra Raspberry, servlet e TSDBMS \label{SEQ RPI TO SERVER}}
+\end{figure}
+\fi
+\subsection{Time Series DBMS}
+TODO
+\subsection{Sistema di generazione di statistiche e grafici}
+TODO
+\subsection{DBMS relazionale}
 TODO
 
 
@@ -51,8 +102,8 @@ Alla fine del periodo di risparmio energetico, impostato da policy energy off, i
 	\includegraphics[scale=.8]{figure/Statemachine_Lamp.png}
 	\caption{Finished State Machine relativo alle policy del sistema \label{FSM POLICY}}
 \end{figure}
-\newpage
 
+\newpage
 \subsection{Controllo presenza auto}
 Questa parte si occupa di controllare la presenza di eventuali auto in transito. Utilizzando un sensore di prossimità periodicamente viene calcolata la distanza tra il sensore e l'ostacolo più vicino per valutare se un'auto possa essere in transito in quel momento sulla carreggiata.
 \paragraph{Comportamento sensore di prossimità}
@@ -86,8 +137,8 @@ Il secondo thread parte dallo stato "waiting" ed esegue una lettura se la lista 
 	\includegraphics[scale=.8]{figure/Statemachine_Photoresistor.png}
 	\caption{Finished State Machine riguardante la lettura della luminosità ambientale \label{FSM PR}}
 \end{figure}
-\newpage
 
+\newpage
 \subsection{Web Server}
 Il web server deve poter comunicare con i Raspberry Pi dislocati sul territorio per poter ottenere e modificare le impostazioni locali di ogni dispositivo.
 Per questo scopo il web server si mette in comunicazione con i Raspberry utilizzando le loro interfacce (TODO: si chiamano interfacce?) REST.
@@ -102,18 +153,18 @@ Il secondo esempio è simile al primo con la differenza che in questo caso l'ute
 	\caption{Sequence diagram per la comunicazione tra web server e Raspberry Pi \label{SD WEB}}
 \end{figure}
 
-
+\newpage
 \section{Deployment}
 Essendo i vari dispositivi Raspberry necessariamente dislocati sul territorio, si può agire su di essi solo variando il numero di lampioni controllati da ognuno. Per quanto riguarda il lato server, invece, è possibile disaccoppiare i servizi su più server, al fine di migliorare le prestazioni e la ridondanza. Verranno ora descritti i principali metodi di deployment. Sono naturalmente possibili soluzioni intermedie.
 \subsection{Centralizzazione totale}
-Una soluzione è quella di installare tutti i servizi su un unico server. Questo minimizza i costi di deployment, ma limita le prestazioni e porta alla costituzione di un pericoloso ``single point of failure''. La riduzione delle prestazioni può non essere un problema nel caso di sistemi di dimensioni ridotte, mentre lo è su sistemi più estesi. La costituzione di un ``single point of failure'', invece, è da tenere bene in considerazione, in quanto un guasto sul server potrebbe causare problemi a tutto il sistema.
+Una soluzione è quella di installare tutti i servizi su un unico server (figura \ref{DD CENT}). Questo minimizza i costi di deployment, ma limita le prestazioni e porta alla costituzione di un pericoloso ``single point of failure''. La riduzione delle prestazioni può non essere un problema nel caso di sistemi di dimensioni ridotte, mentre lo è su sistemi più estesi. La costituzione di un ``single point of failure'', invece, è da tenere bene in considerazione, in quanto un guasto sul server potrebbe causare problemi a tutto il sistema.
 \begin{figure}[tbp]
 	\centering
 	\includegraphics[scale=.5]{figure/Deployment_Diagram_2.png}
 	\caption{Diagramma di deployment (server centralizzato) \label{DD CENT}}
 \end{figure}
 \subsection{Distribuzione}
-La soluzione più scalabile e consigliata è quella di installare i vari servizi su server separati: questo porta ad un forte incremento delle prestazioni, e riduce l'impatto derivante da eventuali guasti.
+La soluzione più scalabile e consigliata è quella di installare i vari servizi su server separati (figura \ref{DD DIST}): questo porta ad un forte incremento delle prestazioni, e riduce l'impatto derivante da eventuali guasti.
 \begin{figure}[tbp]
 	\centering
 	\includegraphics[scale=.45]{figure/Deployment_Diagram_1.png}
@@ -122,3 +173,7 @@ La soluzione più scalabile e consigliata è quella di installare i vari servizi
 \subsection{Layer di smistamento}
 Un'ulteriore soluzione prevede di utilizzare un layer di smistamento, installando più istanze della servlet su server diversi. In questo modo il nucleo del traffico non convergerebbe direttamente sul server centrale, ma verrebbe smistato precedentemente, facendo attività di load balancing. Inoltre, in caso di problemi con un'istanza specifica della servlet, solo i Raspberry direttamente collegati ad essa ne risentirebbero.
 TODO: immagine
+
+
+\section{Sicurezza}
+TODO
