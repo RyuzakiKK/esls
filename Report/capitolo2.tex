@@ -46,32 +46,58 @@ Utilizzando server cloud ``PaaS'', l'astrazione si sposta di un livello verso l'
 Valutate le alternative, si è deciso di scartare l'acquisto di server dedicati, poiché si è ritenuto importante consentire il rapido ridimensionamento delle risorse hardware dedicate, garantendo scalabilità. Tra le due soluzioni ``IaaS'' e ``PaaS'' si è scelta la prima, in quanto le attuali proposte ``Paas'' sul mercato sono state ritenute troppo limitanti nelle funzionalità per il tipo di sistema che si vuole realizzare.
 
 \subsection{Server Web}
-TODO
+Il server web centrale è utilizzato dagli operatori per modificare la configurazione dei Raspberry e per eseguirne la manutenzione. L'utilizzo di tale interfaccia è saltuario, e difficilmente più operatori la utilizzano concorrentemente. Per questo motivo le risorse necessarie a fornire questo servizio sono contenute e non è necessario adottare strategie particolari. È quindi sufficiente un normale web server. La comunicazione con i Raspberry avviene tramite interfaccia REST, dove l'interfaccia web in esecuzione sul server centrale costituisce il client. Ulteriori dettagli sul funzionamento della comunicazione tra il server web e i Raspberry sono descritti nella progettazione della parte Raspberry.
 %\begin{figure}[ht] % Nota: immagine già messa sotto nel rasp
 %	\centering
 %	\includegraphics[scale=.8]{figure/Sequence_Diagram_WebServer.png}
 %	\caption{Diagramma di sequenza delle comunicazioni tra  \label{FSM POLICY}}
 %\end{figure}
+
+\subsection{Time Series DBMS}
+Analizzando i dati prodotti dai Raspberry, risaltano i seguenti aspetti:
+\begin{itemize}
+ \item ne vengono prodotte grandi quantità in relativamente poco tempo;
+ \item sono fortemente time-oriented, ovvero l'accesso avviene prima di tutto in base al tempo (timestamp) in cui sono stati registrati.
+\end{itemize}
+Per questi motivi si è valutata l'opportunità di archiviarli su un database non relazionale, sia per motivi di performance, sia per ottimizzare la componente time-oriented degli accessi. I ``time series database'' sono stati inventati precisamente per venire incontro a queste esigenze.
+Un TS-DBMS consente di creare, enumerare, aggiornare, eliminare ed organizzare serie temporali. L'organizzazione può essere gerarchica e includere metadati associati. È possibile eseguire operazioni su intere serie di dati come la moltiplicazione, addizione e combinare più serie di dati in un'unica, applicando trasformazioni. I dati possono essere filtrati basandosi su pattern temporali, valori di soglia minimi e massimi o altre funzioni matematiche.
+\paragraph{Formato dei dati}
+I dati memorizzati sul TS-DBMS sono gli eventi segnalati dai Raspberry:
+\begin{itemize}
+ \item tipologia dell'evento;
+ \item host che ha generato l'evento;
+ \item area geografica (eventualmente quartiere) in cui si trova l'host;
+ \item azione eseguita;
+ \item intensità luminosa impostata sui lampioni;
+ \item valore di luminosità registrato dalla fotoresistenza;
+ \item timestamp.
+\end{itemize}
+Sulla base di questi dati sarà possibile costruire statistiche e grafici per analizzare i pattern di utilizzo e valutare strategie per migliorare l'efficienza energetica complessiva nella città.
+
 \subsection{Servlet}
-TODO
-\iffalse
-\begin{figure}[ht]
+Al fine di garantire scalabilità e sicurezza, i Raspberry non comunicano direttamente con il DBMS, ma si appoggiano ad un intermediario, che ha lo scopo di ricevere ed elaborare i messaggi dei Raspberry per poi inviarli al DBMS. Le comunicazioni in ingresso e in uscita dalla servlet seguono il paradigma REST, ovvero i Raspberry contattano la servlet attraverso la sua interfaccia REST e lo stesso fa la servlet nei confronti del TS-DBMS. È possibile eseguire multiple istanze della servlet su server diversi per distribuire il carico e introdurre ridondanza.
+\paragraph{Interfaccia REST}
+La servlet espone l'interfaccia REST descritta in figura \ref{API REST SERVLET}, utilizzata dai Raspberry. Il metodo ``changeLightIntensity'' è utilizzato per notificare un avvenuto cambio di intensità luminosa (a causa delle policy impostate sul Raspberry); ``changePolicy'' notifica l'avvenuta reimpostazione delle policy (a causa dell'intervento di un operatore attraverso l'interfaccia web); ``notifyError'' notifica un problema di funzionamento.
+\begin{figure}[tbp]
 	\centering
 	\includegraphics[scale=.8]{figure/Class_Diagram_Server_REST.png}
 	\caption{API REST Servlet \label{API REST SERVLET}}
 \end{figure}
-\begin{figure}[ht]
+\paragraph{Diagramma di sequenza}
+In figura \ref{SEQ RPI TO SERVER} sono mostrate le interazioni tra Raspberry e servlet, e tra servlet e TS-DBMS.
+\begin{figure}[tbp]
 	\centering
-	\includegraphics[scale=.8]{figure/Sequence_Diagram_rpi_to_server.png}
-	\caption{Diagramma di sequenza delle comunicazioni tra Raspberry, servlet e TSDBMS \label{SEQ RPI TO SERVER}}
+	\includegraphics[scale=.65]{figure/Sequence_Diagram_rpi_to_server.png}
+	\caption{Diagramma di sequenza delle comunicazioni tra Raspberry, servlet e TS-DBMS \label{SEQ RPI TO SERVER}}
 \end{figure}
-\fi
-\subsection{Time Series DBMS}
-TODO
+
+\newpage
 \subsection{Sistema di generazione di statistiche e grafici}
-TODO
+La consultazione diretta dei dati memorizzati nel TS-DBMS può non essere user-friendly, e sicuramente non praticabile dall'utente medio. Vale la pena quindi di garantire una modalità di fruizione maggiormente accessibile. In particolare, si vuole rendere possibile la generazione di statistiche e grafici basati sui dati contenuti nel TS-DBMS. Il sistema dovrà essere estendibile, in modo che i grafici non siano cablati all'interno del software, ma l'utente abbia modo di costruirli personalizzandoli in base alle proprie esigenze. Una volta che tali grafici saranno costruiti, saranno fruibili anche dall'utente medio.
+
 \subsection{DBMS relazionale}
-TODO
+In aggiunta al TS-DBMS, si è valutato utile utilizzare anche un DBMS relazionale per mantenere alcune informazioni semi-statiche o generate in quantità di gran lunga inferiori rispetto a quelle memorizzate nel TS-DBMS, quali le credenziali di accesso ai singoli Raspberry e...
+TODO (messaggi changePolicy e notifyError)
 
 
 \section{Progettazione Raspberry}
@@ -154,6 +180,8 @@ Il secondo esempio è simile al primo con la differenza che in questo caso l'ute
 \end{figure}
 
 \newpage
+
+
 \section{Deployment}
 Essendo i vari dispositivi Raspberry necessariamente dislocati sul territorio, si può agire su di essi solo variando il numero di lampioni controllati da ognuno. Per quanto riguarda il lato server, invece, è possibile disaccoppiare i servizi su più server, al fine di migliorare le prestazioni e la ridondanza. Verranno ora descritti i principali metodi di deployment. Sono naturalmente possibili soluzioni intermedie.
 \subsection{Centralizzazione totale}
@@ -171,9 +199,33 @@ La soluzione più scalabile e consigliata è quella di installare i vari servizi
 	\caption{Diagramma di deployment (server distribuito) \label{DD DIST}}
 \end{figure}
 \subsection{Layer di smistamento}
-Un'ulteriore soluzione prevede di utilizzare un layer di smistamento, installando più istanze della servlet su server diversi. In questo modo il nucleo del traffico non convergerebbe direttamente sul server centrale, ma verrebbe smistato precedentemente, facendo attività di load balancing. Inoltre, in caso di problemi con un'istanza specifica della servlet, solo i Raspberry direttamente collegati ad essa ne risentirebbero.
-TODO: immagine
+Un'ulteriore soluzione prevede di utilizzare un layer di smistamento, installando più istanze della servlet su server diversi (figura \ref{DD LAYERED}). In questo modo il nucleo del traffico non convergerebbe direttamente sul server centrale, ma verrebbe smistato precedentemente, facendo attività di load balancing. Inoltre, in caso di problemi con un'istanza specifica della servlet, solo i Raspberry direttamente collegati ad essa ne risentirebbero.
+\begin{figure}[tbp]
+	\centering
+	\includegraphics[scale=.45]{figure/Deployment_Diagram3v2.png}
+	\caption{Diagramma di deployment (server distribuito) \label{DD LAYERED}}
+\end{figure}
 
 
 \section{Sicurezza}
-TODO
+Come evidenziato in fase di analisi dei requisiti, la sicurezza è un fattore critico per il successo del sistema. Si rende quindi essenziale considerare la sicurezza già in fase di progettazione, in modo da minimizzare il numero e l'impatto delle eventuali vulnerabilità residue. Per raggiungere questo scopo si agisce principalmente su due fronti: le comunicazioni di rete e il funzionamento interno dei servizi.
+
+\subsection{Comunicazioni di rete}
+Il primo aspetto di criticità è la modalità con cui avvengono le comunicazioni di rete, che costituiscono il fulcro del sistema. Essendo il sistema pensato per funzionare sfruttando la rete Internet, occorre adottare opportune strategie per garantire autenticazione, riservatezza e integrità per ogni trasferimento dati. Sono possibili anche varianti non basate su Internet. La rete del sistema è suddivisibile in due macro-parti con caratteristiche diverse:
+\begin{itemize}
+ \item tra i Raspberry e la/le Servlet, caratterizzata da un elevata cardinalità e un ridotto traffico per singola connessione;
+ \item tra la/le Servlet e il database, caratterizzata da un elevato volume di traffico su un singolo collegamento.
+\end{itemize}
+\paragraph{TLS}
+Poiché le comunicazioni avvengono per design sfruttando interfacce REST e quindi il protocollo HTTP su TCP/IP, una prima ipotesi è quella di adottare il protocollo TLS 1.2, la più recente versione di ``Transport Layer Security (TLS)'' (in futuro sarà possibile utilizzare le nuove versioni del protocollo con un aggiornamento software), che fornisce i servizi richiesti ed è lo standard del settore. Ogni servizio sarà configurato in modo da accettare richieste solo con questo protocollo. I dettagli sugli algoritmi crittografici e di hashing da utilizzare sono demandati all'implementazione, con la raccomandazione di consentire esclusivamente algoritmi sicuri e di disabilitare completamente quelli obsoleti. Questa è la scelta che è stata effettuata per il sistema.
+\paragraph{Rete ad hoc}
+Una prima variante è quella di utilizzare una rete ad hoc separata da Internet. Questa opzione, sebbene possibile, sarebbe probabilmente inutilmente costosa, in quanto richiederebbe la realizzazione di una nuova rete, senza possibilità di riutilizzare quella esistente. Inoltre, la maggiore sicurezza derivante da questa architettura di rete appare ridondante, in quanto il protocollo TLS è sufficientemente sicuro da viaggiare su Internet senza rischi significativi. Questa via potrebbe essere utile nel caso si scegliesse di utilizzare dispositivi embedded a capacità computazionale estremamente ridotta, al punto da non essere in grado di eseguire i calcoli crittografici necessari a TLS, oppure nel caso il sistema (o parte di esso) fosse fisicamente collocato in zone isolate, dove non è stata portata connettività Internet cablata.
+\paragraph{VPN}
+Come alternativa alla crittografia basata su TLS, si può valutare di trasmettere i dati all'interno di tunnel VPN. Questa opzione potrebbe essere scelta per evitare l'implementazione della crittografia come parte di questo sistema, appoggiandosi ad un servizio di sistema (la VPN) già sviluppato da terzi. Tuttavia, questa scelta richiederebbe un tunnel VPN per ogni Raspberry, con conseguente aumento del carico sulle servlet, quindi appare poco sensata per il collegamento dei Raspberry alla Servlet, mentre potrebbe essere più ragionevole per quello tra Servlet e database.
+
+\subsection{Sicurezza dei servizi}
+I vari componenti software saranno scritti utilizzando linguaggi di alto livello che prevengano vulnerabilità di tipo buffer overflow. In questo modo il problema viene spostato sugli interpreti o le macchine virtuali che eseguono il codice (ad esempio ``Java Virtual Machine'' (JVM) nel caso di Java). L'accesso ai servizi dovrà essere ristretto tramite oppurtune policy dei firewall, in modo da esporre solo i servizi strettamente indispensabili, restringendoli, dove possibile, anche in base agli indirizzi IP (ad esempio, il TS-DBMS dovrà essere accessibile solo dalla/e servlet, e non dai Raspberry).
+\paragraph{Virtualizzazione}
+La modalità di deployment distribuita precedentemente descritta contribuisce ad un maggiore isolamento dei servizi rispetto alla modalità centralizzata. Utilizzando macchine virtuali single-purpose è possibile mitigare notevolmente l'impatto di un'eventuale intrusione, dal momento che la compromissione di un server non implicherebbe quella totale di tutto il sistema. In questo modo i tempi di risposta e ripristino da parte dei sistemisti sarebbe ridotto.
+\paragraph{Permessi di esecuzione e MAC}
+I servizi devono poter funzionare, dove possibile, con privilegi di esecuzione ridotti (idealmente, mai con i privilegi di root). In questo modo, la compromissione di un servizio non comporterebbe automaticamente un danno per tutto il sistema. Come ulteriore opzione, è possibile implementare sul sistema politiche di ``Mandatory Access Control'' (MAC), in modo da confinare ulteriormente i servizi ai soli permessi strettamente necessari alla loro esecuzione. Questo non vale solo per i servizi realizzati nell'ambito di questo progetto, ma anche per quelli installati sul sistema operativo, necessari al suo funzionamento.
