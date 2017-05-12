@@ -1,0 +1,90 @@
+\chapter{Testing}
+
+%TODO: scrivere qualcosa
+
+\section{Testing della parte embedded}
+
+\subsection{Unit tests}
+
+Per quanto riguarda gli unit tests si è cercato di coprire le funzioni più complesse del sistema.
+
+In tutti i test è stato utilizzato il framework \textit{unittest} di Python, il quale è stato realizzato inizialmente prendendo spunto da JUnit.
+
+\subsubsection{Main Sanity Check \label{msc}}
+
+In questo test si è controllata la correttezza della funzione \textit{sanity\_check} presente nel \textit{main}.
+
+Quando le policy di un lampione vengono modificate viene chiamata la funzione \textit{sanity\_check} che ha il compito di assicurare che i dati inseriti siano validi e corretti.
+
+I controlli che esegue passano dai più intuitivi come il fatto che l'orario debba essere nell'intervallo numerico 0-23 fino a controlli più complessi, come la verifica che il risparmio energetico sia compreso tra l'inizio e la fine delle policy di accensione e spegnimento.
+
+Essendoci diversi casi limite come l'inizio delle policy in un giorno e la fine nel seguente, scrivere un unit test è stato di notevole aiuto per coprire diverse possibilità che si potrebbero presentare nella realtà.
+
+In questo caso potendo essere influente anche il giorno e l'orario in cui si effettua il controllo, si è utilizzata la funzione \textit{patch} offerta da \textit{unittest.mock} per modificare a piacimento il valore relativo alla data corrente.
+
+
+\subsubsection{Lamp Unit tests}
+
+Sulla classe \textit{lamp} sono stati testati i due metodi statici \textit{get\_delta} e \textit{get\_wait}.
+
+Il metodo \textit{get\_delta} prende come parametri un orario di inizio e uno di fine, e restituisce i secondi di differenza tra i due orari.
+
+Per questo tipo di test si è provato un orario di inizio uguale alla fine, un orario di fine maggiore di quello di partenza, quindi relativo allo stesso giorno, e con un orario di fine minore, quindi relativo al giorno seguente.
+
+Il metodo \textit{get\_wait}, in modo simile a \textit{get\_delta}, prende come parametri un orario di inizio e uno di fine, e restituisce i secondi di attesa necessari all'inizio dello scheduling.
+Se l'orario attuale è già all'interno dello scheduling, verrà restituito un valore negativo corrispondente al numero di secondi già trascorsi dall'inizio.
+
+In questo caso sono stati effettuati diversi test combinando i possibili orari di inizio, fine e l'orario in cui viene effettuata la richiesta.
+Per modificare l'orario della richiesta è stata usata la funzione \textit{patch} come nel caso \ref{msc}.
+
+
+\subsection{Integration tests}
+
+%TODO: scrivere qualcosa
+
+\subsubsection{Classe RPiMockGPIO}
+
+Per simulare i pin di GPIO del Raspberry Pi è stata creata la classe RPiMockGPIO in modo da permettere di simulare l'esecuzione del programma anche senza l'utilizzo fisico di un Raspberry.
+
+La funzione di GPIO più utile che viene utilizzata nel programma si chiama \textit{wait\_for\_edge} e consiste nell'aspettare che un determinato pin cambi stato.
+Nel progetto viene utilizzata tutte le volte che si vuole misurare la distanza con il sensore ad ultrasuoni. Tenendo conto del tempo trascorso tra l'inizio e la fine dell'esecuzione di \textit{wait\_for\_edge} è possibile calcolare la distanza dell'oggetto in prossimità del sensore.
+
+L'implementazione di \textit{wait\_for\_edge} nella classe RPiMockGPIO prevede semplicemente un \textit{time.sleep} su una variabile \textit{wait\_seconds}.
+Per questo motivo regolando il valore di \textit{wait\_seconds} è possibile simulare diversi scenari. Impostando un valore alto (come ad esempio 1 secondo) si può creare una situazione in cui non ci siano mezzi in transito sulle carreggiate.
+Al contrario impostando un valore basso (come 0.001 secondi) si potrà rilevare sempre auto in transito.
+
+\subsubsection{Schedule test \label{st}}
+
+Questo test permette di controllare la correttezza durante le operazioni di inizializzazione del sistema, accensione dei lampioni quando si è nella fascia di schedule e successivo spegnimento alla fine dello schedule.
+
+La configurazione del test prevede:
+\begin{itemize}
+	\item La lettura del file \textit{cfg} di un lampione
+	\item Il mock dell'orario corrente a 10 secondi prima dell'inizio dello schedule
+	\item L'impostazione a 1 secondo della variabile \textit{wait\_seconds}, quindi corrispondete a nessuna auto in transito
+\end{itemize}
+
+A questo punto viene eseguito il \textit{main} del programma e dopo pochi secondi si controlla che il lampione che si sta testando sia spento, perché fuori dal suo orario di schedule.
+
+Avendo impostato inizialmente l'orario corrente a 10 secondi dall'inizio dello schedule, il sistema aspetta qualche secondo e poi controlla che il lampione sia acceso come da programmazione.
+La sua intensità deve corrispondere a quella impostata sul file \textit{cfg}.
+
+Infine si imposta l'ora corrente 1 minuto dopo la fine dello schedule e si verifica il corretto spegnimento del lampione.
+
+\subsubsection{Test rilevamento auto}
+
+In questo test viene controllata la correttezza durante le operazioni di inizializzazione del sistema, rilevamento di mezzi in transito sulla carreggiata, ritorno a luminosità ridotta quando non sono presenti auto e infine spegnimento alla fine dello schedule.
+
+La configurazione del test prevede:
+\begin{itemize}
+	\item La lettura del file \textit{cfg} di un lampione
+	\item Il mock dell'orario corrente all'interno dello schedule per il risparmio energetico
+	\item L'impostazione a 0 secondi della variabile \textit{wait\_seconds} permettendo di rilevare sempre mezzi in transito sulla carreggiata
+\end{itemize}
+
+In seguito viene eseguito il \textit{main} e dopo pochi secondi si verifica che il lampione sia acceso perché il sistema deve avere rilevato automobili sulla carreggiata.
+
+Successivamente si imposta la variabile \textit{wait\_seconds} a 1 secondo, quindi in modo che non vengano più rilevate auto.
+Dopo qualche secondo di attesa si controlla che l'intensità del lampione corrisponda al suo valore di risparmio energetico.
+
+Infine, come per il test \ref{st}, viene impostata l'ora corrente 1 minuto dopo la fine dello schedule e si controlla che il lampione si sia spento correttamente.
