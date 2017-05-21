@@ -76,7 +76,7 @@ Il server web utilizzato per ospitare l'interfaccia di gestione dei Raspberry è
 Allo stato attuale il carico su questo servizio si mantiene basso, in quanto le richieste che deve gestire sono poche contemporaneamente (solo gli operatori manutentori accedono a questo servizio).
 Di conseguenza, è possibile utilizzare anche altri server web, ad esempio Apache. L'utilizzo di \textit{nginx} è stato pensato per far fronte ad eventuali nuove funzionalità future.
 Come misura di sicurezza, tutte le connessioni sono protette tramite TLS 1.2, per evitare intercettazioni ed attacchi di tipo man-in-the-middle.
-I dettagli implementativi dell'interfaccia web per controllare i Raspberry sono indicati in seguito nella sezione \ref{serv_rest_in}.
+I dettagli implementativi dell'interfaccia web per controllare i Raspberry sono indicati in seguito nella sezione \ref{serv-rest-in}.
 
 \subsection{Time Series DBMS \label{tsdbms}}
 Come evidenziato in fase di progettazione, l'utilizzo di un Time Series database è particolarmente indicato per l'archiviazione dei dati statistici prodotti dai Raspberry.
@@ -125,13 +125,13 @@ Opzionalmente, si può valutare di utilizzare un database relazionale di support
 % TODO Da rivedere
 
 
-\section{Implementazione della servlet \label{serv_impl}}
+\section{Implementazione della servlet \label{serv-impl}}
 Come descritto nell'architettura nel capitolo precedente, i dispositivi Raspberry non comunicano direttamente con il database, ma si affidano ad una o più istanze di una servlet intermediaria.
 Il linguaggio di programmazione scelto per l'implementazione è Java, poiché è disponibile per un'ampia varietà di sistemi operativi ed esiste un ampio supporto da parte di librerie esterne.
 Data la natura dell'applicazione, che necessita di reattività e scalabilità, l'implementazione è stata realizzata sfruttando \textit{Vert.x}, una libreria integrabile in Java che consente di utilizzare un paradigma event-driven e non bloccante, particolarmente indicata per la realizzazione di microservizi REST.
 Resta comunque possibile implementare la servlet con altre tecnologie e linguaggi di programmazione, a patto di mantenere invariate le interfacce REST.
 
-\subsection{Interfaccia REST in ingresso \label{serv_rest_in}}
+\subsection{Interfaccia REST in ingresso \label{serv-rest-in}}
 La servlet viene contattata dai Raspberry (client) con un messaggio JSON contenente una serie di dati, dipendente dal tipo di messaggio. Tutte le connessioni crittografate e autenticate con TLS.
 I possibili campi sono:
 \begin{itemize}
@@ -144,7 +144,7 @@ I possibili campi sono:
 
 \subsection{Interfaccia REST in uscita}
 La servlet, nel suo ruolo di mediatore, esegue la conversione dei dati JSON ricevuti dai Raspberry nel formato richiesto dal database, e lo contatta utilizzando a sua volta un'interfaccia REST (in questo caso la servlet si comporta da client rispetto al database (server)).
-Il contenuto dei messaggi è descritto nella parte di dettaglio del Time Series Database (sezione \ref{serv_rest_in}).
+Il contenuto dei messaggi è descritto nella parte di dettaglio del Time Series Database (sezione \ref{serv-rest-in}).
 Per motivi di sicurezza, ad ogni risposta ai client, vengono inseriti alcuni header HTTP per mitigare l'impatto di vulnerabilità Cross Site Scripting (XSS) e altri usi scorretti, oltre a disabilitare il caching (non necessario in questo tipo di applicazione).
 
 \subsection{Parametri della servlet}
@@ -260,7 +260,7 @@ La configurazione dei lampioni potrebbe essere salvata:
 Salvando le configurazioni su un server centrale si avrebbe il vantaggio di poter effettuare query consultando un singolo server e di gestire facilmente il backup centralizzato delle configurazioni;
 d'altro canto, ogni dispositivo embedded dovrebbe sempre contattare il server per poter venire a conoscenza della propria programmazione e, nel caso in cui la connessione ad internet venisse a mancare, il dispositivo embedded smetterebbe di funzionare.
 Salvando le configurazioni in locale su ogni Raspberry si ha una maggiore resistenza ai guasti visto che, anche nel caso in cui la connessione internet venisse persa, il dispositivo embedded potrebbe continuare a funzionare essendo il proprio comportamento totalmente locale.
-Un database relazionale potenzialmente potrebbe offri prestazioni maggiori rispetto ad un file di testo, ma tale vantaggio sarebbe evidente solo nel caso in cui i dati da salvare fossero in numero considerevole, e non è questo il caso;
+Un database relazionale potenzialmente potrebbe offrire prestazioni maggiori rispetto ad un file di testo, ma tale vantaggio sarebbe evidente solo nel caso in cui i dati da salvare fossero in numero considerevole, e non è questo il caso;
 un file di testo con una certa sintassi permette di controllare i valori salvati e di modificarli anche manualmente agendo direttamente sul file senza effettuare complicate query SQL.
 Considerando i requisiti di progettazione come l'affidabilità del sistema e la facilità di gestione, si è scelto di salvare le configurazioni utilizzando un file di testo locale su ogni dispositivo embedded.
 Inoltre il deploy dei dispositivi embedded potrebbe essere automatizzato, ad esempio tramite l'utilizzo di software quali \textit{Ansible} o \textit{Puppet}.
@@ -293,8 +293,8 @@ In definitiva grazie a tale implementazione si è reso possibile sia la modifica
 \newpage
 
 \subsection{Messaggi a fini statistici}
-Quando i dispositivi embedded eseguono azioni rilevanti, inviano ad un'istanza della servlet (sezione \ref{serv_impl}) un messaggio \textit{JSON} per consentire agli addetti ai lavori di avere una panoramica generale sull'andamento dell'intero sistema.
-I possibili campi del messaggio sono stati descritti nella sezione \ref{serv_rest_in} relativa all'implementazione della servlet.
+Quando i dispositivi embedded eseguono azioni rilevanti, inviano ad un'istanza della servlet (sezione \ref{serv-impl}) un messaggio \textit{JSON} per consentire agli addetti ai lavori di avere una panoramica generale sull'andamento dell'intero sistema.
+I possibili campi del messaggio sono stati descritti nella sezione \ref{serv-rest-in} relativa all'implementazione della servlet.
 
 \subsection{API REST}
 Come scritto in fase di progettazione, i Raspberry Pi devono esporre un insieme di API di tipo REST per consentire la modifica delle policy relative alla programmazione dei lampioni.
@@ -323,12 +323,12 @@ L'interfaccia è ottimizzata sia per un uso desktop che mobile.
 \begin{figure}[tbp]
 	\centering
 	\includegraphics[scale=.62]{figure/web_desktop.png}
-	\caption{Interfaccia web Desktop \label{FSM POLICY}} %TODO questa label è sbagliata.
-	\subfloat[(Mobile) Campi corretti]{{\includegraphics[width=6cm]{figure/web_mobile.png} }}
+	\caption{Interfaccia web Desktop \label{WD}}
+	\subfloat[(Mobile) Campi corretti]{{\includegraphics[width=6cm]{figure/web_mobile.png} }}%
 	\qquad
-	\subfloat[(Mobile) Campi mancanti o errati]{{\includegraphics[width=6cm]{figure/web_mobile_errors.png} }}
+	\subfloat[(Mobile) Campi mancanti o errati]{{\includegraphics[width=6cm]{figure/web_mobile_errors.png} }}%
 	%\caption{Esempi della interfaccia mobile}%
-	\label{fig:example}
+	\label{fig:example}%
 \end{figure}
 
 \newpage
