@@ -41,7 +41,7 @@ In questo caso potendo essere influente anche il giorno e l'orario in cui si eff
 \subsubsection{Lamp Unit tests}
 Sulla classe \textit{lamp} sono stati testati i due metodi statici \textit{get\_delta} e \textit{get\_wait}.
 Il metodo \textit{get\_delta} prende come parametri un orario di inizio e uno di fine, e restituisce i secondi di differenza tra i due orari.
-Per questo tipo di test si è inserito un orario di inizio uguale alla fine, un orario di fine maggiore di quello di partenza, quindi relativo allo stesso giorno, e con un orario di fine minore, quindi relativo al giorno seguente.
+Per questo tipo di test si è inserito un orario di inizio uguale alla fine, un orario di fine maggiore di quello di partenza, quindi relativo allo stesso giorno, e un orario di fine minore, quindi relativo al giorno seguente.
 Il metodo \textit{get\_wait}, in modo simile a \textit{get\_delta}, prende come parametri un orario di inizio e uno di fine, e restituisce i secondi di attesa necessari all'inizio dello scheduling.
 Se l'orario attuale è già all'interno dello scheduling, verrà restituito un valore negativo corrispondente al numero di secondi già trascorsi dall'inizio.
 In questo caso sono stati effettuati diversi test combinando i possibili orari di inizio, fine e l'orario in cui viene effettuata la richiesta.
