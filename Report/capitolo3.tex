@@ -39,7 +39,7 @@ Ogni servizio in esecuzione dovrebbe idealmente essere eseguito utilizzando un a
 Come misura di sicurezza aggiuntiva, per limitare gli eventuali danni nel caso si verificasse un'intrusione, in aggiunta al Discretionary Access Control utilizzato da Linux, è buona norma utilizzare un meccanismo di Mandatory Access Control per confinare quanto più possibile ogni singolo processo.
 Nell'ambito di questa installazione è stato utilizzato AppArmor. In alternativa, è possibile utilizzare SELinux, che fornisce un livello di granularità maggiore, ma è anche notevolmente più complesso da configurare.
 Data la natura del servizio, tale per cui solo un amministratore è in grado di aprire una shell sul server, e non essendo i dati trattati critici, AppArmor è più che adeguato allo scopo.
-\paragraph{SSH}
+\paragraph{SSH \label{ssh-server}}
 Il servizio SSH (Secure Shell) è utilizzato esclusivamente dall'amministratore per eseguire operazioni di manutenzione sul server.
 Rispetto alla configurazione di default, sono state aggiunte alcune impostazioni di hardening, in quanto si tratta del servizio più appetibile per un eventuale attaccante: una compromissione di SSH consentirebbe di eseguire comandi dannosi, e aprirebbe la porta allo sfruttamento di vulnerabilità che potrebbero portare ad una privilege escalation a root, compromettendo l'intero server.
 Le impostazioni aggiuntive di OpenSSH server sono:
@@ -165,12 +165,12 @@ Altri parametri hard-coded sono:
 \section{Implementazione della parte embedded - Raspberry}
 In questa sezione verrà illustrata l'implementazione della parte Raspberry.
 
-\subsection{Hardware}
-%TODO
-\paragraph{Raspberry Pi}
-%TODO dotazione hardware raspberry
-\paragraph{Sensori e attuatori}
-%TODO sensori e attuatori utilizzati
+\subsection{Raspberry Pi}
+Come scritto in precedenza, per l'implementazione del progetto si è scelto di utilizzare i Raspberry Pi.
+Il Raspberry, realizzato in UK dalla Raspberry Pi Foundation, è un single-board computer delle dimensioni di una carta di credito dal prezzo contenuto (circa \$35).
+Nel corso degli anni sono state rilasciate diverse revisioni fino ad arrivare all’attuale versione 3.\\
+Per il progetto verrà utilizzata la versione 1 B+, perché la sua capacità elaborativa è più che sufficiente.
+Tale versione del Raspberry Pi è basata sul system on a chip (SoC) Broadcom BCM2835 che include un processore ARM1176JZF-S 700 MHz, una GPU VideoCore IV e 512 MB di RAM.
 
 \subsection{Sistema operativo e servizi di sistema}
 Per quanto riguarda la scelta del sistema operativo da utilizzare, la scelta è ricaduta sulla distribuzione Linux Raspbian, in quanto è la principale distribuzione ufficialmente supportata per Raspberry e, basandosi su Debian, offre un livelli di leggerezza, stabilità e sicurezza elevati.
@@ -180,11 +180,12 @@ Ad ogni modo, sebbene la scelta della distribuzione sia ricaduta su Raspbian, è
 I messaggi che i Raspberry Pi inviano quando comunicano con il server contengono al loro interno anche un timestamp per fini statistici.
 Per evitare che col passare del tempo l'orario vada fuori sincrono, si è impostato l'aggiornamento tramite server \textit{NTP} su base giornaliera invece che, come di default, ad ogni avvio: i Raspberry possono restare attivi per lunghi periodi senza essere riavviati.
 \paragraph{SSH}
-%TODO (vedere anche la mia sezione su ssh più in alto in questo capitolo per i concetti di base. Però più sintetica)
+Il servizio SSH (Secure Shell) è utilizzato da tutti i tecnici che intendono essettuare modifiche più avanzate allo scheduling dei lampioni rispetto a quelle che si potrebbero fare attraverso l'interfaccia Web (come per esempio modificare lo scheduling di diversi lampioni tutti in una volta).
+Come per la configurazione di SSH lato server spiegata nel paragrafo \ref{ssh-server}, anche qui sono state aggiunte le stesse impostazioni di hardening rispetto alla configurazione di default.
 
 \subsection{Linguaggio di programmazione, paradigma ad attori e organizzazione a task}
-Per il programma in esecuzione sui Raspberry Pi si è scelto di utilizzare Python 3, che garantisce un elevato supporto per i sensori e attuatori attualmente disponibili.
-%TODO Aggiungere qualcosa per tessere le lodi di Python (perché proprio Python e non C/Java/qualunque altra cosa?)
+Per il programma in esecuzione sui Raspberry Pi si è scelto di utilizzare Python 3, che garantisce un elevato supporto per i sensori e attuatori attualmente disponibili, essendo esso il linguaggio di riferimento per la programmazione su Raspberry.
+Altri linguaggi come Java o C potrebbero attualmente avere un supporto più limitato su diversi sensori e attuatori.
 Essendo il software dei Raspberry composto da diverse parti tra loro autonome e concorrenti, si è scelto di utilizzare il paradigma ad attori (tramite la libreria \textit{Pykka}), un modello computazione concorrente a più alto livello rispetto alla gestione manuale dei thread, in quanto si addice maggiormente alla struttura interna del progetto.
 In questo modo ogni componente logica è un attore e la comunicazione avviene esclusivamente tramite scambio di messaggi. In risposta ad un messaggio ricevuto un attore può:
 \begin{itemize}
@@ -200,7 +201,7 @@ Come definito in fase di progettazione, i Raspberry devono poter eseguire divers
  \item rilevamento dell'intensità luminosa;
  \item gestione dell'illuminazione dei lampioni in base ad uno scheduling.
 \end{itemize}
-La libreria \textit{threading} di Python, che permette ad un singolo programma l'esecuzione di più thread, è stata impiegata.
+La libreria \textit{threading} di Python, che permette ad un singolo programma l'esecuzione di più thread, è stata impiegata per tale scopo.
 
 \subsection{Controllo presenza auto \label{cpa}}
 Per controllare la presenza di auto sulla carreggiata viene effettuato il calcolo della distanza utilizzando il sensore ad ultrasuoni HC-SR04.
@@ -241,7 +242,6 @@ In alternativa si potrebbe prevedere l'utilizzo di più sensori di luminosità i
 Come per il controllo di presenza di auto della sezione \ref{cpa}, anche il processo di rilevamento è gestito da un attore.
 
 \subsection{Scheduling illuminazione \label{si}}
-%TODO questa sezione è lunga e poco strutturata. Valutare di spezzarla in più paragraph o, se complicasse troppo la formattazione, al limite di andare a capo quando si cambia argomento
 Per quanto riguarda la programmazione dell'illuminazione, il sistema offre la possibilità di impostare su base giornaliera un orario di accensione, di spegnimento, di inizio e di fine del periodo di risparmio energetico.
 % in fase di progettazione è stato spiegato cos'è il periodo di risparmio energetico?
 In tutte e quattro le impostazioni, oltre all'orario, è previsto anche un campo relativo alla soglia di intensità luminosa desiderata.
@@ -252,6 +252,8 @@ Se alle 19:00 l'intensità luminosa rilevata fosse minore di 50, i lampioni si a
 Al contrario, se la luminosità rilevata fosse bassa, questo potrebbe anche essere dovuto a residui di sporco che con il tempo potrebbero depositarsi sul sensore.
 Quindi anche se si rileva un livello di luminosità basso, si aspetta comunque l'orario impostato per accendere i lampioni.
 La programmazione temporale viene espressa con precisione al minuto, visto che considerare anche i secondi comporterebbe un livello di precisione inutilmente elevato per questo scenario applicativo.
+
+\paragraph{Configurazione lampioni}
 La configurazione dei lampioni potrebbe essere salvata:
 \begin{itemize}
  \item in locale su ogni dispositivo embedded o su un server centralizzato;
@@ -312,7 +314,15 @@ Quando si vuole concludere la fase di debug bisogna inviare una POST all'indiriz
 Una volta conclusa la fase di debug, i lampioni torneranno a funzionare seguendo il proprio scheduling.
 
 \subsection{Gestione dei guasti}
-%TODO: cosa succede se un rasp si rompe? Cosa continua a funzionare e cosa no a seconda del tipo di guasto (guasto di rete, hardware, ...). Parlare anche della notifica del guasto al server (ipotizzando di avere hardware che si accorge dei led bruciati, che però nella nostra implementazione non c'è, ma il software deve supportarlo).
+Essendo questo un progetto che prevede l'utilizzo a regime di centinaia o migliaia di dispositivi embedded dislocati sul territorio, il guasto Hardware deve essere considerato la norma e non l'eccezione.
+Per questo motivo sono stati presi in considerazione i vari tipi di guasti che potrebbero verificarsi che vanno dal guasto dell'intera board embedded, guasto di rete fino al guasto di un singolo lampione.
+Nel caso un dispositivo embedded smettesse di funzionare solo i lampioni da esso gestiti non si accenderebberto più.
+Questo perché il sistema nel complesso è in grado di funzionare indipendentemente dai singoli dispositivi che lo compongono.
+Ci si può accorgere facilmente di un gasto di questo tipo perché nei log sul server centrale si noterebbe subito la mancanza degli eventi di accensione e rilevamento auto da parte del sistema embedded guasto.
+Un altro tipo di guasto potrebbe essere solo relativo alla funzionalità di rete.
+In questo caso il dispositivo embedded continuerebbe a funzionare correttamente in quanto la gestione e lo scheduling dei lampioni avviene completamente in modo locale.
+Anche in questo caso ci si può accorgere di tale problema verificando la mancanza di log da parte di quel dispositivo embedded.
+Se invece si fulminasse un singolo LED e il dispositivo embedded fosse in grado di accorgersene potrebbe avvertire il server centrale inviando un determinato tipo di messaggio.
 
 \section{Implementazione dell'interfaccia Web di manutenzione}
 Come illustrato nella sezione \ref{si}, per permettere agli addetti ai lavori di controllare e modificare la programmazione dei singoli lampioni è stata implementata un'interfaccia Web tramite un server REST.
