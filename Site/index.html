@@ -28,7 +28,7 @@
         </div>
     </form>
 
-    <p>Change Energy policy</p>
+    <p>Change Energy Policy</p>
 
     <form id="energy_form" class="col s12" novalidate="novalidate">
         <div class="row">
@@ -104,6 +104,31 @@
         <div class="row">
             <button class="btn waves-effect waves-light" type="submit" id="policy_off_submit">Submit
                 <i class="material-icons right">send</i>
+            </button>
+        </div>
+    </form>
+
+    <p>Debug</p>
+    <form id="debug_form" class="col s12" novalidate="novalidate">
+        <div class="row">
+            <div class="input-field col s6">
+                <input type="text" name="debug_id" id="debug_id" required="">
+                <label for="debug_id">id</label>
+            </div>
+            <div class="input-field col s6">
+                <input type="text" name="debug_on_itensity" id="debug_on_intensity" required="">
+                <label for="debug_on_intensity">Intensity on</label>
+            </div>
+        </div>
+        <div class="row">
+            <button class="btn waves-effect waves-light" type="submit" id="debug_on_submit" value="1">Set on
+                <i class="material-icons right">visibility</i>
+            </button>
+            <button class="btn waves-effect waves-light" type="submit" id="debug_off_submit">Set Off
+                <i class="material-icons right">visibility_off</i>
+            </button>
+            <button class="btn waves-effect waves-light" type="submit" id="debug_stop_submit">Stop
+                <i class="material-icons right">stop</i>
             </button>
         </div>
     </form>

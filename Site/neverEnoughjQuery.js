@@ -11,6 +11,7 @@ $(document).ready(function() {
     var energy_off_time =  $('.energy_off_time');
     var login_form = $('#login_form');
     var port = ":9020";
+    var action = "";
 
     $(function() {
         $('#login_form').on('submit', function(e) {
@@ -38,7 +39,7 @@ $(document).ready(function() {
                 var pass = document.getElementById("password").value;
                 var policy_id = document.getElementById("policy_id").value;
                 var address = document.getElementById("address").value;
-                if (address.length < 5 || address.substring(0, 4) != "http") {
+                if (address.length < 5 || address.substring(0, 4) !== "http") {
                     address = "https://" + address;
                 }
                 $.ajax({
@@ -48,7 +49,7 @@ $(document).ready(function() {
                     headers: {
                         'Authorization': 'Basic ' + btoa(user + ':' + pass)
                     },
-                    url: address + port + "/esls/api/1.0/policies/" + policy_id,
+                    url: address + port + "/esls/api/1.0/policies/lamp/" + policy_id,
                     success: function(data){
                         lamp_id.empty();
                         lamp_id.append(data[0]);
@@ -69,6 +70,7 @@ $(document).ready(function() {
                         energy_off_time.empty();
                         energy_off_time.append(data[3]['time_h_off'] + ':' + data[3]['time_m_off']);
                         Materialize.showStaggeredList('#staggered');
+                        $('#staggered').css({opacity: 100});
                     },
                     error: function(XMLHttpRequest, textStatus, errorThrown) {
                         Materialize.toast('ERROR HTTP ' + XMLHttpRequest.status, 4000, 'rounded');
@@ -82,6 +84,71 @@ $(document).ready(function() {
             }
         });
     });
+
+    $('#debug_on_submit').click(function () {
+        action = "/on";
+        console.log("on");
+    });
+
+    $('#debug_off_submit').click(function () {
+        action = "/off";
+        console.log("off");
+    });
+
+    $('#debug_stop_submit').click(function () {
+        action = "/stop";
+        console.log("stop");
+    });
+
+    $(function() {
+        $('#debug_form').on('submit', function(e) {
+            e.preventDefault();
+            var fail = false;
+            login_form.find('input').each(function(){
+                if($(this).prop('required')){
+                    if (!$(this).val()) {
+                        fail = true
+                    }
+                }
+            });
+            if (!fail) {
+                var user = document.getElementById("user").value;
+                var pass = document.getElementById("password").value;
+                var address = document.getElementById("address").value;
+                if (address.length < 5 || address.substring(0, 4) !== "http") {
+                    address = "https://" + address;
+                }
+                var debug_id = document.getElementById("debug_id").value;
+                var debug_on_intensity = document.getElementById("debug_on_intensity").value;
+                var data = {"intensity":debug_on_intensity};
+                data = JSON.stringify(data);
+                console.log(data);
+                $.ajax({
+                    type: "POST",
+                    contentType : 'application/json',
+                    data: data,
+                    withCredentials: true,
+                    headers: {
+                        'Authorization': 'Basic ' + btoa(user + ':' + pass)
+                    },
+                    url: address + port + "/esls/api/1.0/debug/lamp/" + debug_id + action,
+                    success: function(msg){
+                        Materialize.toast('Done!', 4000, 'rounded');
+                        console.log(msg);
+                    },
+                    error: function(XMLHttpRequest, textStatus, errorThrown) {
+                        Materialize.toast('ERROR HTTP ' + XMLHttpRequest.status, 4000, 'rounded');
+                        console.log(XMLHttpRequest.status + " " + textStatus + " " + errorThrown);
+                    }
+                });
+            } else {
+                console.log("required fields!!");
+                login_form.find(':submit').click(); // Check the Credential fields
+            }
+        });
+    });
+
+
 
     $(function() {
         $('#policy_on_form').on('submit', function(e) {
