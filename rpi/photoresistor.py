@@ -19,6 +19,7 @@ class Photoresistor(pykka.ThreadingActor):
         self.i2cBus.write_byte_data(self.address_TSL2561, 0x80, 0x03)
         self.cv = threading.Condition()
         self._listActors = []
+        self.actors_ev = threading.Event()
         t = threading.Thread(target=self.start_measuring)
         t.daemon = True
         t.start()
@@ -26,21 +27,27 @@ class Photoresistor(pykka.ThreadingActor):
     def add_actor(self, actor_ref):
         with self.cv:
             self._listActors.append(actor_ref)
-        logger.info("[{0}]I added an actor {1}".format("photo", actor_ref))
+            if len(self._listActors) == 1:
+                self.actors_ev.set()
+        logger.info("I added the actor {0}".format(actor_ref))
 
     def remove_actor(self, actor_ref):
         with self.cv:
             self._listActors.remove(actor_ref)
+            if len(self._listActors) == 0:
+                self.actors_ev.clear()
+                logger.info("I removed the last actor {0}".format(actor_ref))
+            else:
+                logger.info("I removed one actor {0}".format(actor_ref))
 
     def start_measuring(self):
         while True:
-            logger.info("busy waiting, that's so boring")
-            while len(self._listActors) is not 0:
-                current_lux = self.measure()
-                logger.info("measured {0}".format(current_lux))
+            self.actors_ev.wait()
+            current_lux = self.measure()
+            logger.info("measured {0}".format(current_lux))
+            with self.cv:
                 for actor in self._listActors:
                     actor.update_light(current_lux)
-                time.sleep(WAIT_TIME)
             time.sleep(WAIT_TIME)
 
     def measure(self):

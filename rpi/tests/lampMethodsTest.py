@@ -8,6 +8,10 @@ import lamp
 class LampMethodsTest(unittest.TestCase):
     @patch('lamp.datetime')
     def test_get_delta(self, mock_date):
+        # start = 20:00 | end = 20:00
+        mock_date.today.return_value = datetime(2017, 2, 1, 22, 0)
+        assert lamp.Lamp.get_delta(20, 0, 0, 20, 0, 0) == 24 * 60 * 60
+
         # start = 20:00 | end = 5:00
         mock_date.today.return_value = datetime(2017, 2, 1, 22, 0)
         assert lamp.Lamp.get_delta(20, 0, 0, 5, 0, 0) == 9 * 60 * 60
@@ -19,7 +23,7 @@ class LampMethodsTest(unittest.TestCase):
     @patch('lamp.datetime')
     def test_get_wait(self, mock_date):
         # start = 20:00 | today = 22:00 | end = 5:00
-        mock_date.today.return_value = datetime(2017, 2, 1, 22, 0)
+        mock_date.today.return_value = datetime(2017, 2, 28, 22, 0)
         assert lamp.Lamp.get_wait(20, 0, 0, 5, 0, 0) == -2 * 60 * 60
 
         # start = 20:00 | end = 22:00 | today = 23:00

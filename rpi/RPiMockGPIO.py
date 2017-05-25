@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 def setmode(mode):
-    print(mode)
+    logger.debug(mode)
 
 
 def setup(pin, mode):
@@ -32,3 +32,7 @@ class PWM:
 
     def start(self, intensity):
         pass
+
+
+def cleanup():
+    pass

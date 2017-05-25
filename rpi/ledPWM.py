@@ -5,16 +5,24 @@ import RPiMockGPIO as GPIO
 
 frequency = 100
 cv = threading.Condition()
-current_intensity = {}
+led_list = {}
 
 
 def set_led_intensity(pin, intensity):
     with cv:
-        current_intensity[pin] = intensity
-        GPIO.setup(pin, GPIO.OUT)
-        GPIO.PWM(pin, frequency).start(intensity)
+        p = led_list.get(pin, None)
+        if p is None:
+            p = GPIO.PWM(pin, frequency)
+            p.start(intensity)
+        else:
+            p = p[1]
+            p.ChangeDutyCycle(intensity)
+        led_list[pin] = [intensity, p]
 
 
 def get_led_intensity(pin):
     with cv:
-        return current_intensity.get(pin, None)
+        led = led_list.get(pin, None)
+        if led is not None:
+            led = led[0]
+        return led
