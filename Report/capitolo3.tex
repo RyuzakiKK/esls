@@ -243,7 +243,6 @@ Come per il controllo di presenza di auto della sezione \ref{cpa}, anche il proc
 
 \subsection{Scheduling illuminazione \label{si}}
 Per quanto riguarda la programmazione dell'illuminazione, il sistema offre la possibilità di impostare su base giornaliera un orario di accensione, di spegnimento, di inizio e di fine del periodo di risparmio energetico.
-% in fase di progettazione è stato spiegato cos'è il periodo di risparmio energetico?
 In tutte e quattro le impostazioni, oltre all'orario, è previsto anche un campo relativo alla soglia di intensità luminosa desiderata.
 Come scelta implementativa, si è deciso di dare la precedenza alla luminosità rilevata rispetto all'orario.
 Di conseguenza il funzionamento sarà il seguente: supponiamo di aver programmato l'accensione dei lampioni per le 19:00 con un livello di luminosità nell'ambiente pari a 50.
@@ -299,11 +298,10 @@ Quando i dispositivi embedded eseguono azioni rilevanti, inviano ad un'istanza d
 I possibili campi del messaggio sono stati descritti nella sezione \ref{serv-rest-in} relativa all'implementazione della servlet.
 
 \subsection{API REST}
-Come scritto in fase di progettazione, i Raspberry Pi devono esporre un insieme di API di tipo REST per consentire la modifica delle policy relative alla programmazione dei lampioni.
-Per tale scopo è stata utilizzata la libreria \textit{Flask}.
+Come scritto in fase di progettazione, i Raspberry Pi devono esporre un insieme di API di tipo REST per consentire la modifica delle policy relative alla programmazione dei lampioni e per poter essere notificati dai dispositivi embedded vicini in caso stia per sopraggiungere un mezzo sulla carreggiata.
+Per tale scopo è stata utilizzata la libreria Python \textit{Flask}.
 Quando un Raspberry riceve una richiesta tramite la API REST, per prima cosa vengono controllate le credenziali fornite, in quanto è sempre richiesta un'autenticazione tramite username e password per poter completare una qualsiasi operazione GET o POST.
 Nel caso la richiesta ricevuta sia valida, verrà restituito un JSON contenente o i dati richiesti, o il codice di stato HTTP 200 (nel caso in cui la richiesta non preveda dati di ritorno) per confermare la riuscita dell'operazione.
-%da rivedere e espandere
 
 \subsection{Modalità Debug}
 Per consentire agli addetti ai lavori di effettuare controlli sui lampioni, come per esempio verificare il loro corretto funzionamento, è stata prevista la possibilità di abilitare la modalità debug.

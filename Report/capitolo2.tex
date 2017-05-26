@@ -137,10 +137,6 @@ Il sistema Raspberry fornisce le seguenti funzionalità:
  \item programma principale che gestisce il web server REST e l'invio delle statistiche al server.
 \end{itemize}
 
-\subsection{Architettura complessiva}
-yes
-%TODO class diagram Raspberry Pi?
-
 \subsection{Raspberry Pi architettura REST}
 %TODO da ricontrollare e espandere?
 I Raspberry devono offrire una interfaccia (?) REST che permetta di poter:
@@ -149,7 +145,7 @@ I Raspberry devono offrire una interfaccia (?) REST che permetta di poter:
 	\item Modificare le policy di accensione e spegnimento
 	\item Modificare le configurazioni per il risparmio energetico
 	\item Permettere di iniziare a concludere una fase di debug per poter fare prove sul funzionamento dei lampioni
-	\item Comunicare ai Raspberry vicini il sopraggiungere di un mezzo sulla carreggiata (solo ad uso interno dei Raspberry stessi) %TODO parlare di questo anche nell'implementazione
+	\item Comunicare ai Raspberry vicini il sopraggiungere di un mezzo sulla carreggiata (solo ad uso interno dei Raspberry stessi)
 \end{itemize}
 
 \subsection{Policy del sistema}
@@ -159,6 +155,7 @@ A meno della rilevazione del passaggio di un'auto o di un livello di intensità 
 Per mostrare il comportamento del sistema riguardante le policy temporali si è utilizzata la macchina a stati finiti semplificata di figura \ref{FSM POLICY}.
 Inizialmente i lampioni partono dallo stato "off" e se l'orario corrente (rappresentato dalla variabile t) è successivo all'orario impostato per la policy on, allora il lampione passerà allo stato "on".
 In seguito quando l'orario supererà la soglia di policy energy on, il lampione andrà in modalità risparmio energetico passando allo stato "energy saving".
+In tale modalità l'intensità luminosa sarà ridotta fino a quando non viene rilevato un mezzo in transito sulla carreggiata.
 Alla fine del periodo di risparmio energetico, impostato da policy energy off, il lampione tornerà allo stato di partenza spegnendosi.
 \begin{figure}[ht]
 	\centering
