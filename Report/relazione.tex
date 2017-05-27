@@ -1,5 +1,8 @@
 \documentclass[12pt,a4paper]{book}
 
+\usepackage{xmpincl}
+\includexmp{CC_Attribution-NonCommercial_4.0_International}
+
 \usepackage[italian]{babel}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -48,7 +51,7 @@ frame=single,
 \titolo{ESLS: Esls Smart Light System}
 \laureando{Ludovico de Nittis\\Eugenio Severi}
 \annoaccademico{2016--2017}
-\facolta{CAMPUS DI CESENA\\SCUOLA DI INGEGNERIA}
+\facolta{CAMPUS DI CESENA\\SCUOLA DI INGEGNERIA E ARCHITETTURA}
 \corsodilaurea{Ingegneria e Scienze Informatiche}
 \corso{\\Ingegneria dei Sistemi Software Adattativi Complessi\\Smart City}
 %\relatore{.}
@@ -69,10 +72,12 @@ frame=single,
 \pagestyle{fancy} \fancyhead[LE,RO]{\bfseries\thepage}
 
 % inclusione dei capitoli
+\input{introduzione.tex}
 \input{capitolo1.tex}
 \input{capitolo2.tex}
 \input{capitolo3.tex}
 \input{capitolo4.tex}
+\input{conclusione.tex}
 
 %\chapter*{Ringraziamenti}
 
