@@ -40,7 +40,7 @@ Questo è possibile grazie all'uso delle interfacce web e alla scalabilità dei 
  \item notifiche di rilevamento del passaggio di automobili (5 lampioni stimati per ogni dispositivo embedded * 20 auto rilevate stimate * 2 transizioni di aumento e riduzione della luminosità).
 \end{itemize}
 Si stima quindi un numero di richieste giornaliere inviate nell'ordine delle 400000 unità [2000*(2+2+200)].
-Altre richieste potranno essere inviate dai Raspberry in maniera straordinaria (quando viene modificata la loro configurazione), ma il loro numero è trascurabile rispetto a quelle ordinarie.
+Altre richieste potranno essere inviate dai dispositivi embedded in maniera straordinaria (quando viene modificata la loro configurazione), ma il loro numero è trascurabile rispetto a quelle ordinarie.
 \\Nei momenti di picco, è verosimile pensare a qualche centinaio di richieste contemporanee, che si verificano principalmente quando molti lampioni si accendono o spengono contemporaneamente, mentre nei momenti di traffico dati minore (durante il giorno) le richieste scenderebbero praticamente a zero.
 Se il numero di tali richieste aumentasse al punto da causare problemi al server nella gestione, sarebbe possibile, lato embedded, non inviare le richieste nell'esatto momento in cui si verificano, ma con un ritardo casuale compreso in un intervallo selezionabile, in modo da distribuire meglio le richieste nel tempo.
 In questo modo le informazioni sul server potrebbero non essere aggiornate all’istante, ma dopo qualche secondo o minuto.
