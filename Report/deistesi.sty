@@ -42,7 +42,7 @@
 %\newcommand{\@correlatorea}{?}
 %\newcommand{\@correlatoreb}{?}
 \newcommand{\@laureando}{?}
-\newcommand{\@parolechiave}{?}
+%\newcommand{\@parolechiave}{?}
 \newcommand{\@dedica}{?}
 %\newcommand{\@sessione}{?}
 
@@ -64,8 +64,8 @@
 %  \renewcommand{\@correlatoreb}{#1  \uppercase{#2}}}
 \newcommand{\laureando}[1]{%
   \renewcommand{\@laureando}{\uppercase{#1}}}
-\newcommand{\parolechiave}[5]{%
-  \renewcommand{\@parolechiave}{#1\\ \medskip #2\\ \medskip #3\\ \medskip #4\\ \medskip #5}}
+%\newcommand{\parolechiave}[5]{%
+%  \renewcommand{\@parolechiave}{#1\\ \medskip #2\\ \medskip #3\\ \medskip #4\\ \medskip #5}}
 \newcommand{\dedica}[1]{%
   \renewcommand{\@dedica}{#1}}
 %\newcommand{\sessione}[1]{%
@@ -133,18 +133,18 @@
   \end{large}
   \end{center}
   }
-  \clearemptydoublepage
-  \pagestyle{empty}
-  \vspace*{20ex}
-    \begin{flushright}
-  \begin{LARGE}
-    \textbf{PAROLE CHIAVE}\\ 
-    \vspace{5ex}
-      \end{LARGE}
-  \begin{normalsize}
-   \textbf{\@parolechiave}
-  \end{normalsize}
-  \end{flushright}
+%  \clearemptydoublepage
+%  \pagestyle{empty}
+%  \vspace*{20ex}
+%    \begin{flushright}
+%  \begin{LARGE}
+%    \textbf{PAROLE CHIAVE}\\
+%    \vspace{5ex}
+%      \end{LARGE}
+%  \begin{normalsize}
+%   \textbf{\@parolechiave}
+%  \end{normalsize}
+%  \end{flushright}
   \vfill
   \clearemptydoublepage
   \ifthenelse{\equal{\@dedica}{?}}{}{%
