@@ -1,6 +1,6 @@
 \chapter{Implementazione}
 
-In questo capitolo verranno descritte le scelte implementative, derivate dalle scelte progettuali.
+In questo capitolo verranno descritte le scelte implementative, derivate da quelle progettuali.
 
 \section{Implementazione della parte server - Sistemistica}
 In questa sezione verrà illustrata la configurazione software del server e dei suoi servizi.
@@ -12,7 +12,7 @@ Tutto il software utilizzato e sviluppato è pensato per funzionare correttament
 Nell'ambito dello sviluppo di questo progetto, si è utilizzato un server virtuale fornito dal provider DigitalOcean con la seguente configurazione hardware:
 \begin{itemize}
  \item 512 MB di RAM;
- \item 1 vCPU;
+ \item 1 vCPU (su CPU Intel Xeon E5-2650L v3);
  \item 20 GB di memoria secondaria su SSD;
  \item 1 TB di traffico di rete massimo mensile.
 \end{itemize}
@@ -23,12 +23,12 @@ Ad ogni modo, come evidenziato in fase di progettazione, nel caso di installazio
 Valutati i sistemi operativi presenti sul mercato, si è scelto di utilizzare una distribuzione Linux per i seguenti motivi:
 \begin{itemize}
  \item coerenza con gli altri componenti del sistema;
- \item sistema operativo open source, quindi tendenzialmente più sicuro;
- \item possibilità di evitare costi di licenza, grazie alla licenza GNU-GPL.
+ \item sistema operativo open source, quindi tendenzialmente più sicuro e personalizzabile;
+ \item possibilità di evitare costi di licenza.
 \end{itemize}
 In particolare, è stata utilizzata la distribuzione Ubuntu Server 16.04, basata sul kernel Linux 4.4, in quanto è una delle distribuzioni maggiormente diffuse in ambito server, è ben documentata, e utilizza software mediamente più aggiornato rispetto ad altre distribuzioni come Debian o CentOS.
 Il software utilizzato è comunque disponibile per tutte le principali distribuzioni, quindi la scelta è in realtà libera, in base alle necessità delle singole installazioni.
-Per motivi di sicurezza, è fondamentale aggiornare regolarmente i software installati per far fronte alle nuove vulnerabilità.
+\\Per motivi di sicurezza, è fondamentale aggiornare regolarmente i software installati per far fronte alle nuove vulnerabilità.
 Questa operazione può essere eseguita manualmente da un sistemista, oppure pianificata automaticamente (nel caso di Ubuntu, configurando il pacchetto \textit{unattended-upgrades}).
 \\Le seguenti funzionalità e servizi di sistema sono stati installati e configurati.
 \paragraph{Utenti}
@@ -36,35 +36,35 @@ Per motivi di sicurezza è opportuno creare per ogni amministratore del server u
 Le operazioni che richiedono privilegi elevati devono essere eseguite utilizzando il comando \textit{sudo}, e mai autenticandosi direttamente come \textit{root}.
 Ogni servizio in esecuzione dovrebbe idealmente essere eseguito utilizzando un account utente ad hoc dotato dei soli privilegi necessari all'esecuzione di quello specifico servizio.
 \paragraph{AppArmor}
-Come misura di sicurezza aggiuntiva, per limitare gli eventuali danni nel caso si verificasse un'intrusione, in aggiunta al Discretionary Access Control utilizzato da Linux, è buona norma utilizzare un meccanismo di Mandatory Access Control per confinare quanto più possibile ogni singolo processo.
+Come misura di sicurezza aggiuntiva al Discretionary Access Control utilizzato da Linux, per limitare gli eventuali danni nel caso si verificasse un'intrusione, è buona norma utilizzare un meccanismo di Mandatory Access Control per confinare quanto più possibile ogni singolo processo.
 Nell'ambito di questa installazione è stato utilizzato AppArmor. In alternativa, è possibile utilizzare SELinux, che fornisce un livello di granularità maggiore, ma è anche notevolmente più complesso da configurare.
-Data la natura del servizio, tale per cui solo un amministratore è in grado di aprire una shell sul server, e non essendo i dati trattati critici, AppArmor è più che adeguato allo scopo.
+Data la natura dei servizi installati sul server, tale per cui solo un amministratore è in grado di aprire una shell sul server, e non essendo i dati trattati critici, AppArmor è più che adeguato allo scopo.
 \paragraph{SSH \label{ssh-server}}
 Il servizio SSH (Secure Shell) è utilizzato esclusivamente dall'amministratore per eseguire operazioni di manutenzione sul server.
-Rispetto alla configurazione di default, sono state aggiunte alcune impostazioni di hardening, in quanto si tratta del servizio più appetibile per un eventuale attaccante: una compromissione di SSH consentirebbe di eseguire comandi dannosi, e aprirebbe la porta allo sfruttamento di vulnerabilità che potrebbero portare ad una privilege escalation a root, compromettendo l'intero server.
-Le impostazioni aggiuntive di OpenSSH server sono:
+Rispetto alla configurazione di default, sono state aggiunte alcune impostazioni di hardening, in quanto si tratta del servizio più appetibile per un eventuale attaccante: una compromissione di SSH consentirebbe di eseguire comandi dannosi e aprirebbe la porta allo sfruttamento di vulnerabilità che potrebbero portare ad una privilege escalation, compromettendo l'intero server.
+\\Le impostazioni aggiuntive di OpenSSH server sono:
 \begin{itemize}
  \item consentire solo la versione 2 del protocollo SSH (la 1 è insicura);
- \item abilitazione dei soli algorigmi crittografici di scambio chiavi considerati robusti (\textit{curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256}), disabilitando quelli meno sicuri (presenti per retrocompatibilità);
+ \item abilitazione dei soli algorigmi crittografici di scambio chiavi considerati robusti (\textit{curve25519-sha256@libssh.org, diffie-hellman-group-exchange-sha256}), disabilitando quelli meno sicuri (presenti per retrocompatibilità);
  \item disabilitazione dei moduli per lo scambio chiavi Diffie-Hellman con chiave più corta di 2048 bit;
- \item utilizzare chiavi private per il server di adeguata lunghezza e solo con algoritmi sicuri (\textit{ed25519,rsa});
+ \item utilizzare chiavi private per il server di adeguata lunghezza e solo con algoritmi sicuri (\textit{ed25519, rsa});
  \item impedire l'autenticazione dei client tramite password, ma solo tramite chiavi asimmetriche (\textit{PasswordAuthentication no; ChallengeResponseAuthentication no; PubkeyAuthentication yes});
- \item abilitazione dei soli algoritmi di crittografia simmetrica considerati robusti (\textit{chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr}), disabilitando quelli meno sicuri (presenti per retrocompatibilità);
- \item abilitazione dei soli algorigmi MAC (Message Authentication Code) considerati robusti (\textit{hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-ripemd160-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256,hmac-ripemd160,umac-128@openssh.com}), disabilitando quelli meno sicuri (presenti per retrocompatibilità);
+ \item abilitazione dei soli algoritmi di crittografia simmetrica considerati robusti (\textit{chacha20-poly1305@openssh.com, aes256-gcm@openssh.com, aes128-gcm@openssh.com, aes256-ctr, aes192-ctr, aes128-ctr}), disabilitando quelli meno sicuri (presenti per retrocompatibilità);
+ \item abilitazione dei soli algorigmi MAC (Message Authentication Code) considerati robusti (\textit{hmac-sha2-512-etm@openssh.com, hmac-sha2-256-etm@openssh.com, hmac-ripemd160-etm@openssh.com, umac-128-etm@openssh.com, hmac-sha2-512, hmac-sha2-256, hmac-ripemd160, umac-128@openssh.com}), disabilitando quelli meno sicuri (presenti per retrocompatibilità);
  \item nel caso lo si ritenesse opportuno, è possibile implementare una forma di autenticazione a due fattori sfruttando un modulo PAM (Pluggable Authentication Module).
 \end{itemize}
 \paragraph{Fail2Ban}
-Al fine di prevenire attacchi di tipo brute-force o basati su dizionario, può essere opportuno utilizzare \textit{Fail2Ban}, un demone che controlla nei file di log la presenza di tentativi di accesso non riusciti e di bloccare temporaneamente gli indirizzi IP dai quali provengono.
-Per evitare che anche gli utenti legittimi vengano bloccati accidentalmente, è buona norma consentire un certo numero di tentativi prima di attuare il blocco.
-Qualora l'indirizzo IP di un utente legittimo venisse bloccato, per tentare nuovamente di accedere è necessario attendere la scadenza del blocco o di accedere direttamente alla console del server.
-\paragraph{UFW}
+Al fine di prevenire attacchi di tipo brute-force o basati su dizionario, può essere opportuno utilizzare \textit{Fail2Ban}, un servizio che controlla nei file di log la presenza di tentativi di accesso non riusciti e consente di bloccare temporaneamente il traffico riguardante gli indirizzi IP dai quali provengono.
+Per evitare che anche gli utenti legittimi vengano bloccati accidentalmente, è buona norma consentire un certo numero di tentativi prima di attuare il blocco e limitare il periodo di blocco a qualche minuto o decina di minuti.
+Qualora l'indirizzo IP di un utente legittimo venisse bloccato, per tentare nuovamente di accedere è necessario attendere la scadenza del periodo di blocco o di accedere direttamente alla console del server.
+\paragraph{Firewall}
 Essendo il sistema in rete, è necessario configurare il firewall per limitare il traffico ai soli servizi necessari. In questa implementazione è stato utilizzato \textit{UFW}, ma è possibile utilizzare anche \textit{iptables}.
-Innanzitutto devono essere bloccate tutte le connessioni in ingresso ad eccezione di quelle necessarie al funzionamento del servizio. Quali siano effettivamente necessarie dipende dall'architettura di deployment (server singolo o più server) e dall'eventuale utilizzo di VPN.
+\\Innanzitutto devono essere bloccate tutte le connessioni in ingresso, ad eccezione di quelle necessarie al funzionamento del servizio. Quali siano effettivamente necessarie dipende dall'architettura di deployment (server singolo o più server) e dall'eventuale utilizzo di VPN.
 Nel caso più semplice (tutti i servizi su uno stesso server), è necessario esporre verso l'esterno solamente SSH, il server web per la gestione e il sistema di generazione di grafici e statistiche.
 Nel caso tutta la rete dei Raspberry fosse contenuta in una VPN o in una rete locale, si potrebbe esporre i singoli servizi solo sulle interfacce deputate a fornire quello specifico servizio.
-In generale, il livello di isolamento sarà direttamente proporzionale alla sicurezza della rete.
-Tuttavia, essendo tutte le informazioni in transito crittografate, il transito delle informazioni su rete pubblica non dovrebbe costituire un problema (salvo eventuali vulnerabilità scoperte in seguito nei software).
-Anche nel caso il sistema trasmetta su una rete pubblica, qualora sia stata acquistata una sottorete di indirizzi IP pubblici, è consigliabile consentire connessioni solo da e verso gli indirizzi di quella sottorete.
+\\In generale, il livello di isolamento sarà direttamente proporzionale alla sicurezza della rete.
+Nel caso il sistema trasmetta sulla rete Internet, qualora sia stata acquistata una sottorete di indirizzi IP pubblici, è consigliabile consentire connessioni solo da e verso gli indirizzi di quella sottorete.
+\\Ad ogni modo, essendo tutte le informazioni in transito crittografate, il passaggio delle informazioni su rete pubblica non dovrebbe costituire un problema (salvo eventuali vulnerabilità scoperte in seguito nei software o nei protocolli utilizzati).
 
 \subsection{Server Web}
 Il server web utilizzato per ospitare l'interfaccia di gestione dei Raspberry è \textit{nginx}. È stato scelto per:
@@ -82,8 +82,8 @@ I dettagli implementativi dell'interfaccia web per controllare i Raspberry sono 
 Come evidenziato in fase di progettazione, l'utilizzo di un Time Series database è particolarmente indicato per l'archiviazione dei dati statistici prodotti dai Raspberry.
 Si è scelto di installare InfluxDB, un TS-DBMS open source sviluppato da InfluxData, scritto in \textit{Go} e ottimizzato per l'archiviazione di dati ad alte prestazioni, per la ricerca efficiente su serie di dati, e con supporto all'alta disponibilità.
 La modalità principale di accesso ai dati è tramite un'interfaccia REST, in linea con i requisiti del sistema, sebbene esistano librerie per l'utilizzo con vari linguaggi di programmazione.
-Nel caso di installazioni più piccole, sarebbe pensabile anche l'utilizzo di un DBMS relazionale, ma si rivelerebbe una scelta poco scalabile.
-I dati vengono inviati ad InfluxDB esclusivamente dalle istanze della servlet, che fungono da mediatori tra i Raspberry e il database.
+Nel caso di installazioni più piccole, sarebbe pensabile anche l'utilizzo di un DBMS relazionale, ma si rivelerebbe una scelta poco scalabile sul lungo termine.
+I dati vengono inviati ad InfluxDB esclusivamente dalle istanze della servlet (descritta in seguito nella sezione \ref{serv-impl}), che fungono da mediatori tra i Raspberry e il database.
 Sono stati implementati tre tipi di messaggi archiviabili sul database: \textit{changeLightIntensity}, \textit{changePolicy}, \textit{notifyError}.
 \paragraph{Messaggio ``changeLightIntensity''}
 Questo messaggio viene generato ogni qual volta un Raspberry modifichi l'intensità luminosa dei lampioni ad esso collegati e contiene i seguenti campi:
@@ -105,14 +105,21 @@ In questo caso vengono registrati i seguenti parametri:
 \end{itemize}
 \paragraph{Messaggio ``notifyError''}
 Questo messaggio viene generato quando un Raspberry auto-diagnostica un errore interno e ha lo scopo di avvisare l'amministratore che è necessario un intervento manuale.
+Contiene i seguenti parametri:
+\begin{itemize}
+ \item un riferimento all'host che ha generato l'evento;
+ \item il tipo di errore rilevato;
+ \item un riferimento alla zona/gruppo in cui il Raspberry si trova;
+ \item un timestamp relativo al momento della generazione dell'evento.
+\end{itemize}
 
 \subsection{Sistema di generazione di statistiche e grafici}
-Per analizzare in maniera proficua la grande quantità di dati potenzialmente archiviata del database InfluxDB si è scelto di utilizzare il software \textit{Grafana}, software specializzato nella generazione di grafici statistici basati sui dati contenuti in TS-DBMS.
+Per analizzare in maniera efficace la grande quantità di dati potenzialmente archiviata del database InfluxDB si è scelto di utilizzare \textit{Grafana}, software specializzato nella generazione di grafici statistici basati sui dati contenuti in TS-DBMS.
 La scelta è ricaduta su questo strumento specifico in quanto è estremamente flessibile, consentendo agli amministratori di generare i grafici di loro interesse filtrando e aggregando i dati.
-In questo modo gli amministratori possono creare dinamicamente i grafici di cui hanno bisogno, adattandosi in questo modo sia alla topologia della città in cui il sistema è installato, sia alle necessità specigiche che potrebbero sorgere in maniera imprevedibile (ad esempio potrebbe sopraggiungere la necessità di monitorare con maggiore granularità un'area della città in particolare, qualora si rilevasse un numero di guasti fuori norma).
-Gli amministratori potranno quindi creare alcuni grafici di interesse generale sempre disponibili e altri dinamicamente in base alle necessità, in maniera simile a quello che avviene nella navigazione di un data-warehouse, ma orientato alle serie di dati.
+In questo modo è possibile creare dinamicamente i grafici di cui si ha bisogno, adattandosi in questo modo sia alla topologia della città, sia alle necessità specifiche che potrebbero sorgere in maniera imprevedibile (ad esempio potrebbe sopraggiungere la necessità di monitorare con maggiore granularità un'area della città in particolare, qualora si rilevasse un numero di guasti fuori norma).
+\\Gli amministratori potranno quindi creare alcuni grafici di interesse generale sempre disponibili e altri dinamicamente in base alle necessità, in maniera simile a quello che avviene nella navigazione di un data-warehouse, ma orientato alle serie di dati.
 I grafici sono creabili e consultabili utilizzando l'interfaccia web di Grafana. Qualora si rendesse necessario creare grafici estremamente personalizzati, è anche possibile scrivere direttamente le query per interrogare il database.
-Per il rilevamento di guasti, si possono generare grafici che mettono in risalto comportamenti al di fuori della media (lampioni che si accendono in orari completamente diversi dagli altri, Raspberry che improvvisamente smettono di inviare dati, ecc.).
+\\Per il rilevamento di guasti, si possono generare grafici che mettono in risalto comportamenti al di fuori della media (lampioni che si accendono in orari completamente diversi dagli altri, Raspberry che improvvisamente smettono di inviare dati, ecc.).
 % TODO inserire uno screen di grafana
 
 \subsection{DBMS relazionale}
@@ -128,11 +135,11 @@ Opzionalmente, si può valutare di utilizzare un database relazionale di support
 \section{Implementazione della servlet \label{serv-impl}}
 Come descritto nell'architettura nel capitolo precedente, i dispositivi Raspberry non comunicano direttamente con il database, ma si affidano ad una o più istanze di una servlet intermediaria.
 Il linguaggio di programmazione scelto per l'implementazione è Java, poiché è disponibile per un'ampia varietà di sistemi operativi ed esiste un ampio supporto da parte di librerie esterne.
-Data la natura dell'applicazione, che necessita di reattività e scalabilità, l'implementazione è stata realizzata sfruttando \textit{Vert.x}, una libreria integrabile in Java che consente di utilizzare un paradigma event-driven e non bloccante, particolarmente indicata per la realizzazione di microservizi REST.
+Data la natura dell'applicazione, che necessita di reattività e scalabilità, l'implementazione è stata realizzata sfruttando \textit{Vert.x}, una libreria integrabile in Java particolarmente indicata per la realizzazione di microservizi REST, che consente di utilizzare un paradigma event-driven e non bloccante.
 Resta comunque possibile implementare la servlet con altre tecnologie e linguaggi di programmazione, a patto di mantenere invariate le interfacce REST.
 
 \subsection{Interfaccia REST in ingresso \label{serv-rest-in}}
-La servlet viene contattata dai Raspberry (client) con un messaggio JSON contenente una serie di dati, dipendente dal tipo di messaggio. Tutte le connessioni crittografate e autenticate con TLS.
+La servlet viene contattata dai Raspberry (client) con un messaggio JSON contenente una serie di dati, dipendente dal tipo di messaggio. Tutte le connessioni sono crittografate e autenticate con TLS.
 I possibili campi sono:
 \begin{itemize}
  \item "area": campo numerico che corrisponde alla zona di appartenenza del lampione. Serve a fini statistici per aggregare i dati;
@@ -153,7 +160,8 @@ Se avviata senza specificare alcun parametro, la servlet utilizzerà quelli di d
  \item \textit{dbhost}: indirizzo IP del database (di default 127.0.0.1);
  \item \textit{listenPort}: porta TCP sulla quale la servlet è in ascolto (di default 44343);
  \item \textit{dbPort}: porta TCP sulla quale il TS-DBMS è in ascolto (di default 8086);
- \item \textit{dbName}: nome del database sul server TS-DBMS (di default ``esls'').
+ \item \textit{dbName}: nome del database sul server TS-DBMS (di default ``esls'');
+ \item \textit{debug}: flag booleano che regola la verbosità dei messaggi di log, a scopo di debug.
 \end{itemize}
 Altri parametri hard-coded sono:
 \begin{itemize}
@@ -173,20 +181,20 @@ Per il progetto verrà utilizzata la versione 1 B+, perché la sua capacità ela
 Tale versione del Raspberry Pi è basata sul system on a chip (SoC) Broadcom BCM2835 che include un processore ARM1176JZF-S 700 MHz, una GPU VideoCore IV e 512 MB di RAM.
 
 \subsection{Sistema operativo e servizi di sistema}
-Per quanto riguarda la scelta del sistema operativo da utilizzare, la scelta è ricaduta sulla distribuzione Linux Raspbian, in quanto è la principale distribuzione ufficialmente supportata per Raspberry e, basandosi su Debian, offre un livelli di leggerezza, stabilità e sicurezza elevati.
-Queste caratteristiche sono di grande importanza in un sistema di questo tipo, ovvero in cui i Raspberry sono dislocati sul territorio e collegati in rete.
-Ad ogni modo, sebbene la scelta della distribuzione sia ricaduta su Raspbian, è possibile utilizzare una qualsiasi altra distribuzione Linux semplicemente installando tutte le dipendenze necessarie che verranno utilizzane in fase di implementazione del progetto.
-\paragraph{Nota sulla gestione del tempo}
+Per quanto riguarda il sistema operativo da utilizzare, la scelta è ricaduta sulla distribuzione Linux \textit{Raspbian}, in quanto è la distribuzione di riferimento e ufficialmente supportata per Raspberry e, basandosi su Debian, offre livelli di leggerezza, stabilità e sicurezza elevati.
+\\Queste caratteristiche sono di grande importanza in un sistema di questo tipo, ovvero in cui i Raspberry sono dislocati sul territorio e collegati in rete.
+Ad ogni modo, sebbene la scelta sia ricaduta su Raspbian, è possibile utilizzare una qualsiasi altra distribuzione Linux semplicemente installando tutte le dipendenze che verranno utilizzate in fase di implementazione del progetto.
+\paragraph{Gestione del tempo}
 I messaggi che i Raspberry Pi inviano quando comunicano con il server contengono al loro interno anche un timestamp per fini statistici.
-Per evitare che col passare del tempo l'orario vada fuori sincrono, si è impostato l'aggiornamento tramite server \textit{NTP} su base giornaliera invece che, come di default, ad ogni avvio: i Raspberry possono restare attivi per lunghi periodi senza essere riavviati.
+Per evitare che, col passare del tempo, l'orario vada fuori sincrono, si è impostato l'aggiornamento tramite server \textit{NTP} su base giornaliera invece che, come di default, ad ogni avvio: i Raspberry possono restare attivi per lunghi periodi senza essere riavviati.
 \paragraph{SSH}
-Il servizio SSH (Secure Shell) è utilizzato da tutti i tecnici che intendono essettuare modifiche più avanzate allo scheduling dei lampioni rispetto a quelle che si potrebbero fare attraverso l'interfaccia Web (come per esempio modificare lo scheduling di diversi lampioni tutti in una volta).
-Come per la configurazione di SSH lato server spiegata nel paragrafo \ref{ssh-server}, anche qui sono state aggiunte le stesse impostazioni di hardening rispetto alla configurazione di default.
+Il servizio SSH (Secure Shell) è utilizzato da tutti i tecnici che intendono effettuare modifiche più avanzate allo scheduling dei lampioni rispetto a quelle che si potrebbero attuare attraverso l'interfaccia Web (come per esempio modificare lo scheduling di diversi lampioni contemporaneamente), o durante le operazioni di manutenzione del software.
+Ai fini di migliorare la sicurezza, analogamente a quanto impostato nella configurazione di SSH lato server (paragrafo \ref{ssh-server}), anche su Raspberry sono state aggiunte le stesse impostazioni di hardening rispetto alla configurazione di default.
 
 \subsection{Linguaggio di programmazione, paradigma ad attori e organizzazione a task}
-Per il programma in esecuzione sui Raspberry Pi si è scelto di utilizzare Python 3, che garantisce un elevato supporto per i sensori e attuatori attualmente disponibili, essendo esso il linguaggio di riferimento per la programmazione su Raspberry.
-Altri linguaggi come Java o C potrebbero attualmente avere un supporto più limitato su diversi sensori e attuatori.
-Essendo il software dei Raspberry composto da diverse parti tra loro autonome e concorrenti, si è scelto di utilizzare il paradigma ad attori (tramite la libreria \textit{Pykka}), un modello computazione concorrente a più alto livello rispetto alla gestione manuale dei thread, in quanto si addice maggiormente alla struttura interna del progetto.
+Per il programma in esecuzione sui Raspberry Pi si è scelto di utilizzare Python 3, linguaggio multi-paradigma, che ha tra i principali obiettivi dinamicità, semplicità e flessibilità.
+Inoltre, Python garantisce un elevato supporto per i sensori e attuatori attualmente disponibili, essendo il linguaggio di riferimento per la programmazione su Raspberry; altri linguaggi come Java o C potrebbero attualmente avere un supporto più limitato su diversi sensori e attuatori.
+\\Essendo il software dei Raspberry composto da diverse parti tra loro autonome e concorrenti, si è scelto di utilizzare il paradigma ad attori (tramite la libreria \textit{Pykka}), un modello computazione concorrente a più alto livello rispetto alla gestione manuale dei thread, in quanto si addice maggiormente alla struttura interna del progetto.
 In questo modo ogni componente logica è un attore e la comunicazione avviene esclusivamente tramite scambio di messaggi. In risposta ad un messaggio ricevuto un attore può:
 \begin{itemize}
  \item prendere una decisione locale;
@@ -205,23 +213,22 @@ La libreria \textit{threading} di Python, che permette ad un singolo programma l
 
 \subsection{Controllo presenza auto \label{cpa}}
 Per controllare la presenza di auto sulla carreggiata viene effettuato il calcolo della distanza utilizzando il sensore ad ultrasuoni HC-SR04.
-Per mitigare eventuali errori grossolani vengono effettuate sempre due misurazioni, calcolando successivamente la media.
 La misurazione avviene inviando un segnale ad ultrasuoni e calcolando il tempo che il segnale impiega per andare e tornare, rimbalzando sugli oggetti.
-Per calcolare la distanza in centimetri si moltiplica il tempo per la velocità del suono nell'aria (34300 cm/s) e il tutto viene diviso per 2 (perché il tempo era relativo all'andata e ritorno).
-Per capire la direzione di marcia di un auto, nel caso di strade a doppio senso di marcia, è possibile adottare due strategie.
+Per calcolare la distanza in centimetri si moltiplica il tempo per la velocità del suono nell'aria (34300 cm/s) e il tutto viene diviso per 2 (perché il tempo è relativo all'andata e ritorno).
+Per mitigare eventuali errori nella rilevazione, vengono effettuate sempre due misurazioni, calcolando successivamente la media.
+\\Per capire la direzione di marcia di un'auto, nel caso di strade a doppio senso di marcia, è possibile adottare due strategie.
 \begin{itemize}
- \item Posizionare nelle vicinanze del primo e dell'ultimo lampione, controllati da un determinato Raspberry, una coppia di sensori ad ultrasuoni a qualche centimetro di distanza tra loro: in questo modo controllando in quale sequenza la coppia di sensori rileva la presenza di un auto è possibile intuirne la direzione di marcia.
- \item Posizionare in tutto due sensori ad ultrasuoni vicino ai lampioni controllati da un determinato Raspberry: il primo andrà posizionato vicino al primo lampione sullo stesso lato della strada, e il secondo andrà vicino all'ultimo lampione sul lato opposto della strada.
- In questo modo impostando una soglia per il rilevamento delle auto pari al limite delle due carreggiate sarà possibile valutare il senso di marcia delle auto.
- Quindi, se per esempio il limite della carreggiata si trova a due metri dal bordo della strada, si imposterà il sensore in modo che se rilevi solo oggetti distanti meno di due metri, ed essi verranno considerati auto in transito sulla propria carreggiata.
+ \item Posizionare nelle vicinanze del primo e dell'ultimo lampione, controllati da un determinato Raspberry, una coppia di sensori ad ultrasuoni a qualche centimetro di distanza tra loro: in questo modo, controllando in quale sequenza la coppia di sensori rileva la presenza di un'auto, è possibile dedurne la direzione di marcia.
+ \item Posizionare in tutto due sensori ad ultrasuoni vicino ai lampioni controllati da un determinato Raspberry: il primo andrà posizionato vicino al primo lampione sullo stesso lato della strada, mentre il secondo andrà vicino all'ultimo lampione sul lato opposto della strada:
+ in questo modo, impostando una soglia per il rilevamento delle auto pari al limite delle due carreggiate, sarà possibile valutare il senso di marcia delle auto.
+ Quindi, se per esempio il limite della carreggiata si trova a due metri dal bordo della strada, si imposterà il sensore in modo che rilevi solo oggetti distanti meno di due metri: essi verranno considerati auto in transito sulla propria carreggiata.
 \end{itemize}
-Per l'implementazione di questo progetto si è optato per l'utilizzo della seconda strategia perché consente di ottenere lo stesso risultato utilizzando solo due sensori ad ultrasuoni invece che quattro, contenendo i costi.
+Nell'implementazione di questo progetto, si è optato per l'utilizzo della seconda strategia, perché consente di ottenere lo stesso risultato utilizzando solo due sensori ad ultrasuoni invece che quattro, contenendo i costi.
 L'utilizzo della prima strategia potrebbe tornare utile nel caso si voglia calcolare anche la velocità di crociera dei veicoli in transito.
-In questo progetto essere in grado di capire il senso di marcia permette di accendere i lampioni in sequenza seguendo il verso di percorrenza.
-Il thread che si occupa del sensore di prossimità utilizza un secondo thread per inviare il segnale ad ultrasuoni.
-Grazie a questa scelta si evita che il thread principale del sensore vada in busy waiting attendendo l'invio e il ritorno del segnale ad ultrasuoni.
-Inoltre si è utilizzata la funzione \textit{wait\_for\_edge} che permette di fermare l'esecuzione del thread fino a quando non viene rilevata un'oscillazione, consumando una quantità minima di CPU.
-Per impostazione predefinita, il processo di misurazione considera la presenza di un veicolo sulla strada se la distanza rilevata è minore di due metri.
+\\Essere in grado di capire il senso di marcia permette di accendere i lampioni in sequenza seguendo il verso di percorrenza.
+Il thread che si occupa del sensore di prossimità utilizza un secondo thread per inviare il segnale ad ultrasuoni: grazie a questa scelta si evita che il thread principale del sensore vada in busy waiting attendendo l'invio e il ritorno del segnale ad ultrasuoni.
+Inoltre, si è utilizzata la funzione \textit{wait\_for\_edge} che permette di fermare l'esecuzione del thread fino a quando non viene rilevata un'oscillazione, consumando una quantità minima di CPU.
+\\Per impostazione predefinita, il processo di misurazione considera la presenza di un veicolo sulla strada se la distanza rilevata è minore di due metri.
 Tale valore può essere facilmente regolato in base alle caratteristiche della strada in cui si intende installare i sensori.
 Il processo di controllo presenza auto è rappresentato da un attore il quale, dopo aver effettuato un controllo, notifica tutti i lampioni interessati.
 
@@ -229,7 +236,7 @@ Il processo di controllo presenza auto è rappresentato da un attore il quale, d
 \lstinputlisting{code/ultrasonic.py}
 
 \subsection{Rilevamento intensità luminosa}
-Considerando che il Raspberry Pi non dispone di PIN analogici, per effettuare le letture di luminosità è possibile utilizzare le seguenti modalità:
+Considerando che il Raspberry Pi non dispone di PIN analogici per il collegamento di fotoresistenze per effettuare le letture di luminosità, è possibile utilizzare le seguenti modalità:
 \begin{itemize}
  \item collegare un altro controllore che abbia pin analogici (ad esempio Arduino) e utilizzare una fotoresistenza analogica;
  \item utilizzare una fotoresistenza analogica collegandola ad un convertitore analogico-digitale (ADC);
@@ -237,20 +244,20 @@ Considerando che il Raspberry Pi non dispone di PIN analogici, per effettuare le
 \end{itemize}
 La prima modalità potrebbe essere presa in considerazione nel caso in cui si debba utilizzare diversi tipi di sensori analogici, tali da giustificare l'utilizzo di un controllore esterno, che comporterebbe maggiori costi e introdurrebbe complessità nel sistema.
 Anche la seconda modalità può essere utile se si deve utilizzare più di un sensore analogico visto che un singolo ADC permette di utilizzare diversi pin analogici, ma è conveniente rispetto alla prima, in quanto più economica e non introduce particolare complessità.
-In questo caso, dovendo collegare una singola fotoresistenza, si è optato per la terza modalità, utilizzando il sensore digitale TSL2561.
-In alternativa si potrebbe prevedere l'utilizzo di più sensori di luminosità in modo da essere in grado di effettuare una media delle letture, compensando eventuali letture errate dovute ad eventuali danneggiamenti o residui di sporco che potrebbero coprire il sensore.
-Come per il controllo di presenza di auto della sezione \ref{cpa}, anche il processo di rilevamento è gestito da un attore.
+In questo caso, dovendo collegare una singola fotoresistenza, si è optato per la terza modalità, utilizzando il sensore digitale \textit{TSL2561}.
+In alternativa si potrebbe prevedere l'utilizzo di più sensori di luminosità in modo da essere in grado di effettuare una media delle letture, compensando le eventuali letture errate dovute a danneggiamenti o residui di sporco che potrebbero coprire il sensore.
+\\Come per il controllo di presenza di auto (sezione \ref{cpa}), anche il processo di rilevamento è gestito da un attore.
 
 \subsection{Scheduling illuminazione \label{si}}
 Per quanto riguarda la programmazione dell'illuminazione, il sistema offre la possibilità di impostare su base giornaliera un orario di accensione, di spegnimento, di inizio e di fine del periodo di risparmio energetico.
 In tutte e quattro le impostazioni, oltre all'orario, è previsto anche un campo relativo alla soglia di intensità luminosa desiderata.
 Come scelta implementativa, si è deciso di dare la precedenza alla luminosità rilevata rispetto all'orario.
-Di conseguenza il funzionamento sarà il seguente: supponiamo di aver programmato l'accensione dei lampioni per le 19:00 con un livello di luminosità nell'ambiente pari a 50.
-Se alle 19:00 l'intensità luminosa rilevata fosse minore di 50, i lampioni si accenderebbero; nel caso in cui l'intensità luminosa fosse maggiore di 50 i lampioni rimarrebbero spenti nonostante siano le 19:00.
-È stata effettuata questa scelta perché se la luminosità esterna rilevata fosse alta sarebbe poco sensato accendere anche i lampioni.
+\\Di conseguenza il funzionamento sarà il seguente: si supponga di aver programmato l'accensione dei lampioni per le 19:00 con un livello di luminosità nell'ambiente pari a 50:
+se alle 19:00 l'intensità luminosa rilevata fosse minore di 50, i lampioni si accenderebbero; nel caso in cui l'intensità luminosa fosse maggiore di 50, i lampioni rimarrebbero spenti nonostante siano le 19:00.
+\\È stata effettuata questa scelta perché, se la luminosità esterna rilevata fosse alta, sarebbe poco sensato accendere anche i lampioni.
 Al contrario, se la luminosità rilevata fosse bassa, questo potrebbe anche essere dovuto a residui di sporco che con il tempo potrebbero depositarsi sul sensore.
 Quindi anche se si rileva un livello di luminosità basso, si aspetta comunque l'orario impostato per accendere i lampioni.
-La programmazione temporale viene espressa con precisione al minuto, visto che considerare anche i secondi comporterebbe un livello di precisione inutilmente elevato per questo scenario applicativo.
+\\La programmazione temporale viene espressa con precisione al minuto, poiché considerare anche i secondi comporterebbe un livello di precisione inutilmente elevato per questo scenario applicativo.
 
 \paragraph{Configurazione lampioni}
 La configurazione dei lampioni potrebbe essere salvata:
@@ -260,15 +267,15 @@ La configurazione dei lampioni potrebbe essere salvata:
 \end{itemize}
 Salvando le configurazioni su un server centrale si avrebbe il vantaggio di poter effettuare query consultando un singolo server e di gestire facilmente il backup centralizzato delle configurazioni;
 d'altro canto, ogni dispositivo embedded dovrebbe sempre contattare il server per poter venire a conoscenza della propria programmazione e, nel caso in cui la connessione ad internet venisse a mancare, il dispositivo embedded smetterebbe di funzionare.
-Salvando le configurazioni in locale su ogni Raspberry si ha una maggiore resistenza ai guasti visto che, anche nel caso in cui la connessione internet venisse persa, il dispositivo embedded potrebbe continuare a funzionare essendo il proprio comportamento totalmente locale.
-Un database relazionale potenzialmente potrebbe offrire prestazioni maggiori rispetto ad un file di testo, ma tale vantaggio sarebbe evidente solo nel caso in cui i dati da salvare fossero in numero considerevole, e non è questo il caso;
+Salvando le configurazioni in locale su ogni Raspberry si ha una maggiore resistenza ai guasti visto che, anche nel caso in cui la connessione internet venisse persa, il dispositivo embedded potrebbe continuare a funzionare, essendo il proprio comportamento totalmente locale.
+\\Un database relazionale potenzialmente potrebbe offrire prestazioni maggiori rispetto ad un file di testo, ma tale vantaggio sarebbe evidente solo nel caso in cui i dati da salvare fossero in numero considerevole, e non è questo il caso;
 un file di testo con una certa sintassi permette di controllare i valori salvati e di modificarli anche manualmente agendo direttamente sul file senza effettuare complicate query SQL.
-Considerando i requisiti di progettazione come l'affidabilità del sistema e la facilità di gestione, si è scelto di salvare le configurazioni utilizzando un file di testo locale su ogni dispositivo embedded.
-Inoltre il deploy dei dispositivi embedded potrebbe essere automatizzato, ad esempio tramite l'utilizzo di software quali \textit{Ansible} o \textit{Puppet}.
+\\Considerando i requisiti di progettazione come l'affidabilità del sistema e la facilità di gestione, si è scelto di salvare le configurazioni utilizzando un file di testo locale su ogni dispositivo embedded.
+Eventualmente il deploy dei dispositivi embedded potrebbe essere automatizzato, ad esempio tramite l'utilizzo di software quali \textit{Ansible} o \textit{Puppet}.
 Grazie a questa scelta gli addetti ai lavori possono effettuare una programmazione agevole su ogni singolo lampione sia tramite interfaccia web che direttamente modificando i file di testo (tramite SSH o localmente).
-Per il formato con cui vengono salvate le configurazioni si è scelto di utilizzare il \textit{Configuration file parser} presente nelle librerie standard di Python, perché permette la creazione di configurazioni con un linguaggio semplice, con una struttura simile ai file \textit{INI} di Microsoft Windows.
-Questo garantisce una facile lettura e modifica anche manuale dei file. I file così creati hanno una estensione \textit{cfg}. I file hanno quattro sezioni principali con diversi campi ciascuna.
-La prima sezione è \textit{GENERAL} e prevede tre campi:
+\\Per il formato con cui vengono salvate le configurazioni si è scelto di utilizzare il \textit{Configuration file parser} presente nelle librerie standard di Python, perché permette la creazione di configurazioni con un linguaggio semplice, con una struttura simile ai file \textit{INI} di Microsoft Windows.
+Questo garantisce una facile lettura e modifica anche manuale dei file. I file così creati hanno estensione \textit{cfg} e contengono quattro sezioni principali con diversi campi ciascuna.
+\\La prima sezione è \textit{GENERAL} e prevede tre campi:
 \begin{itemize}
  \item \textit{lamp\_id}: un identificativo intero progressivo del singolo lampione;
  \item \textit{lamp\_pin}: il numero del pin a cui il lampione è collegato sul dispositivo embedded;
@@ -277,8 +284,8 @@ La prima sezione è \textit{GENERAL} e prevede tre campi:
 La seconda sezione \textit{LampPolicyOn} e la terza \textit{LampPolicyOff} hanno gli stessi campi:
 \begin{itemize}
  \item \textit{intensity}: l'intensità di luce del lampione espressa con un numero da 0 a 100 (impostare l'intensità a 0 equivale a spegnere il lampione);
- \item \textit{time\_h}: l'ora a cui questa impostazione dovrà iniziare;
- \item \textit{time\_m}: il minuto a cui questa impostazione dovrà iniziare;
+ \item \textit{time\_h}: l'ora a cui l'impostazione dovrà iniziare;
+ \item \textit{time\_m}: il minuto a cui l'impostazione dovrà iniziare;
  \item \textit{photoresistor}: la soglia richiesta di luminosità ambientale.
 \end{itemize}
 La quarta sezione è \textit{LampEnergySaving} e prevede cinque campi:
@@ -287,40 +294,39 @@ La quarta sezione è \textit{LampEnergySaving} e prevede cinque campi:
  \item \textit{time\_h\_on} e \textit{time\_m\_on}: rispettivamente l'ora e i minuti in cui inizia la modalità risparmio energetico;
  \item \textit{time\_h\_on} e \textit{time\_m\_on}: rispettivamente l'ora e i minuti in cui termina la modalità risparmio energetico.
 \end{itemize}
-Per una questione di coerenza l'inizio e la fine della modalità risparmio energetico deve essere obbligatoriamente compresa tra \textit{LampPolicyOn} e \textit{LampPolicyOff}.
-In definitiva grazie a tale implementazione si è reso possibile sia la modifica dello scheduling di un singolo lampione con la comodità della interfaccia web, sia una modifica più avanzata collegandosi per esempio in SSH ad un Raspberry e cambiando i valori manualmente sui file di configurazione.
+Per motivi di coerenza, gli orari di inizio e di fine della modalità di risparmio energetico devono essere obbligatoriamente compresi tra quelli impostati in \textit{LampPolicyOn} e \textit{LampPolicyOff}.
+In definitiva, grazie a tale implementazione, si è reso possibile sia la modifica dello scheduling di un singolo lampione con la comodità dell'interfaccia web, sia una modifica più avanzata collegandosi tramite SSH ad un Raspberry e cambiando i valori manualmente sui file di configurazione.
 
 \lstinputlisting{code/light0.cfg}
 \newpage
 
 \subsection{Messaggi a fini statistici}
-Quando i dispositivi embedded eseguono azioni rilevanti, inviano ad un'istanza della servlet (sezione \ref{serv-impl}) un messaggio \textit{JSON} per consentire agli addetti ai lavori di avere una panoramica generale sull'andamento dell'intero sistema.
+Quando i dispositivi embedded eseguono azioni rilevanti (accensione e spegnimento dei lampioni e impostazioni di policy), inviano ad un'istanza della servlet (sezione \ref{serv-impl}) un messaggio \textit{JSON} per consentire agli addetti ai lavori di avere una panoramica generale sull'andamento dell'intero sistema.
 I possibili campi del messaggio sono stati descritti nella sezione \ref{serv-rest-in} relativa all'implementazione della servlet.
 
 \subsection{API REST}
-Come scritto in fase di progettazione, i Raspberry Pi devono esporre un insieme di API di tipo REST per consentire la modifica delle policy relative alla programmazione dei lampioni e per poter essere notificati dai dispositivi embedded vicini in caso stia per sopraggiungere un mezzo sulla carreggiata.
+Come scritto in fase di progettazione, i Raspberry Pi devono esporre un insieme di API di tipo REST per consentire la modifica delle policy relative alla programmazione dei lampioni e per poter ricevere notifica dai dispositivi embedded vicini in caso stia per sopraggiungere un mezzo sulla carreggiata.
 Per tale scopo è stata utilizzata la libreria Python \textit{Flask}.
-Quando un Raspberry riceve una richiesta tramite la API REST, per prima cosa vengono controllate le credenziali fornite, in quanto è sempre richiesta un'autenticazione tramite username e password per poter completare una qualsiasi operazione GET o POST.
+\\Quando un Raspberry riceve una richiesta tramite la API REST, per prima cosa vengono controllate le credenziali fornite, in quanto è sempre richiesta un'autenticazione tramite username e password per poter completare una qualsiasi operazione GET o POST.
 Nel caso la richiesta ricevuta sia valida, verrà restituito un JSON contenente o i dati richiesti, o il codice di stato HTTP 200 (nel caso in cui la richiesta non preveda dati di ritorno) per confermare la riuscita dell'operazione.
 
 \subsection{Modalità Debug}
 Per consentire agli addetti ai lavori di effettuare controlli sui lampioni, come per esempio verificare il loro corretto funzionamento, è stata prevista la possibilità di abilitare la modalità debug.
 Entrando in modalità debug i lampioni si accenderanno e spegneranno in base ai comandi che verranno impartiti manualmente, ignorando le eventuali policy impostate in precedenza.
-Per abilitarla è necessario inviare una richiesta POST all'indirizzo \textit{/debug/lamp/<int:lamp\_id>/on} (per accendere un lampione) oppure a \textit{/debug/lamp/<int:lamp\_id>/off} (per spegnere un lampione).
+\\Per abilitarla è necessario inviare una richiesta POST all'indirizzo \textit{/debug/lamp/<int:lamp\_id>/on} (per accendere un lampione) oppure a \textit{/debug/lamp/<int:lamp\_id>/off} (per spegnere un lampione).
 Le richieste POST dovranno contenere un campo \textit{intensity} che corrisponde all'intensità luminosa desiderata a cui si intende impostare il lampione.
 Quando si vuole concludere la fase di debug bisogna inviare una POST all'indirizzo \textit{/debug/lamp/<int:lamp\_id>/stop}.
 Una volta conclusa la fase di debug, i lampioni torneranno a funzionare seguendo il proprio scheduling.
 
 \subsection{Gestione dei guasti}
-Essendo questo un progetto che prevede l'utilizzo a regime di centinaia o migliaia di dispositivi embedded dislocati sul territorio, il guasto Hardware deve essere considerato la norma e non l'eccezione.
-Per questo motivo sono stati presi in considerazione i vari tipi di guasti che potrebbero verificarsi che vanno dal guasto dell'intera board embedded, guasto di rete fino al guasto di un singolo lampione.
-Nel caso un dispositivo embedded smettesse di funzionare solo i lampioni da esso gestiti non si accenderebberto più.
-Questo perché il sistema nel complesso è in grado di funzionare indipendentemente dai singoli dispositivi che lo compongono.
-Ci si può accorgere facilmente di un gasto di questo tipo perché nei log sul server centrale si noterebbe subito la mancanza degli eventi di accensione e rilevamento auto da parte del sistema embedded guasto.
-Un altro tipo di guasto potrebbe essere solo relativo alla funzionalità di rete.
-In questo caso il dispositivo embedded continuerebbe a funzionare correttamente in quanto la gestione e lo scheduling dei lampioni avviene completamente in modo locale.
+Essendo questo un progetto che prevede l'utilizzo a regime di centinaia o migliaia di dispositivi embedded dislocati sul territorio, guasti hardware di varia natura possono verificarsi frequentemente.
+Per questo motivo sono stati presi in considerazione i vari tipi di guasti che potrebbero verificarsi, dal guasto dell'intera board embedded al guasto di rete, fino al guasto di un singolo lampione.
+\\Nel caso un dispositivo embedded smettesse di funzionare, solo i lampioni da esso gestiti non si accenderebbero più: il sistema nel complesso è in grado di funzionare indipendentemente dai singoli dispositivi che lo compongono.
+Ci si può accorgere facilmente di un gasto di questo tipo perché nei log sul server centrale si noterebbe la mancanza degli eventi di accensione e rilevamento auto da parte del sistema embedded guasto.
+\\Un altro tipo di guasto potrebbe essere solo relativo alla funzionalità di rete.
+In questo caso il dispositivo embedded continuerebbe a funzionare correttamente, in quanto la gestione e lo scheduling dei lampioni avviene completamente in modo locale.
 Anche in questo caso ci si può accorgere di tale problema verificando la mancanza di log da parte di quel dispositivo embedded.
-Se invece si fulminasse un singolo LED e il dispositivo embedded fosse in grado di accorgersene potrebbe avvertire il server centrale inviando un determinato tipo di messaggio.
+Se invece si bruciasse un singolo LED, e il dispositivo embedded fosse in grado di accorgersene, potrebbe avvertire il server centrale inviando un determinato tipo di messaggio.
 
 \section{Implementazione dell'interfaccia Web di manutenzione}
 Come illustrato nella sezione \ref{si}, per permettere agli addetti ai lavori di controllare e modificare la programmazione dei singoli lampioni è stata implementata un'interfaccia Web tramite un server REST.
