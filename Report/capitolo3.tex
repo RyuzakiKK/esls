@@ -137,6 +137,7 @@ Come descritto nell'architettura nel capitolo precedente, i dispositivi Raspberr
 Il linguaggio di programmazione scelto per l'implementazione è Java, poiché è disponibile per un'ampia varietà di sistemi operativi ed esiste un ampio supporto da parte di librerie esterne.
 Data la natura dell'applicazione, che necessita di reattività e scalabilità, l'implementazione è stata realizzata sfruttando \textit{Vert.x}, una libreria integrabile in Java particolarmente indicata per la realizzazione di microservizi REST, che consente di utilizzare un paradigma event-driven e non bloccante.
 Resta comunque possibile implementare la servlet con altre tecnologie e linguaggi di programmazione, a patto di mantenere invariate le interfacce REST.
+\\Il codice è stato scritto in modo da essere facilmente estendibile sfruttando i design pattern object oriented, in modo da aggiungere nuove funzionalità o potenziare quelle esistenti.
 
 \subsection{Interfaccia REST in ingresso \label{serv-rest-in}}
 La servlet viene contattata dai Raspberry (client) con un messaggio JSON contenente una serie di dati, dipendente dal tipo di messaggio. Tutte le connessioni sono crittografate e autenticate con TLS.
