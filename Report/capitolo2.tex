@@ -316,3 +316,9 @@ I servizi devono poter funzionare, dove possibile, con privilegi di esecuzione r
 In questo modo, la compromissione di un servizio non comporterebbe automaticamente un danno per tutto il sistema.
 Come ulteriore opzione, è possibile implementare sul sistema politiche di \textit{Mandatory Access Control} (MAC), in modo da confinare ulteriormente i servizi ai soli permessi strettamente necessari alla loro esecuzione.
 Questo non vale solo per i servizi realizzati nell'ambito di questo progetto, ma anche per quelli installati sul sistema operativo, necessari al suo funzionamento.
+\paragraph{Permessi sul database}
+In base al principio di privilegio minimo (\textit{least privilege}), è possibile creare più utenti sul database con privilegi diversi, utilizzati dai vari utenti (umani e non), ad esempio:
+\begin{itemize}
+ \item un utente ad uso delle istanze della servlet che può inserire record, ma non eliminare o modificare quelli esistenti;
+ \item un utente utilizzato per il monitoraggio, che può eseguire query in sola lettura.
+\end{itemize}

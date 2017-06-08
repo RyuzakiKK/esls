@@ -81,10 +81,10 @@ I dettagli implementativi dell'interfaccia web per controllare i Raspberry sono 
 \subsection{Time Series DBMS \label{tsdbms}}
 Come evidenziato in fase di progettazione, l'utilizzo di un Time Series database è particolarmente indicato per l'archiviazione dei dati statistici prodotti dai Raspberry.
 Si è scelto di installare InfluxDB, un TS-DBMS open source sviluppato da InfluxData, scritto in \textit{Go} e ottimizzato per l'archiviazione di dati ad alte prestazioni, per la ricerca efficiente su serie di dati, e con supporto all'alta disponibilità.
-La modalità principale di accesso ai dati è tramite un'interfaccia REST, in linea con i requisiti del sistema, sebbene esistano librerie per l'utilizzo con vari linguaggi di programmazione.
+\\La modalità principale di accesso ai dati è tramite un'interfaccia REST, in linea con i requisiti del sistema, sebbene esistano librerie per l'utilizzo con vari linguaggi di programmazione.
 Nel caso di installazioni più piccole, sarebbe pensabile anche l'utilizzo di un DBMS relazionale, ma si rivelerebbe una scelta poco scalabile sul lungo termine.
 I dati vengono inviati ad InfluxDB esclusivamente dalle istanze della servlet (descritta in seguito nella sezione \ref{serv-impl}), che fungono da mediatori tra i Raspberry e il database.
-Sono stati implementati tre tipi di messaggi archiviabili sul database: \textit{changeLightIntensity}, \textit{changePolicy}, \textit{notifyError}.
+\\Sono stati implementati tre tipi di messaggi archiviabili sul database: \textit{changeLightIntensity}, \textit{changePolicy}, \textit{notifyError}.
 \paragraph{Messaggio ``changeLightIntensity''}
 Questo messaggio viene generato ogni qual volta un Raspberry modifichi l'intensità luminosa dei lampioni ad esso collegati e contiene i seguenti campi:
 \begin{itemize}
@@ -113,24 +113,34 @@ Contiene i seguenti parametri:
  \item un timestamp relativo al momento della generazione dell'evento.
 \end{itemize}
 
+
 \subsection{Sistema di generazione di statistiche e grafici}
 Per analizzare in maniera efficace la grande quantità di dati potenzialmente archiviata del database InfluxDB si è scelto di utilizzare \textit{Grafana}, software specializzato nella generazione di grafici statistici basati sui dati contenuti in TS-DBMS.
 La scelta è ricaduta su questo strumento specifico in quanto è estremamente flessibile, consentendo agli amministratori di generare i grafici di loro interesse filtrando e aggregando i dati.
-In questo modo è possibile creare dinamicamente i grafici di cui si ha bisogno, adattandosi in questo modo sia alla topologia della città, sia alle necessità specifiche che potrebbero sorgere in maniera imprevedibile (ad esempio potrebbe sopraggiungere la necessità di monitorare con maggiore granularità un'area della città in particolare, qualora si rilevasse un numero di guasti fuori norma).
+In questo modo è possibile creare dinamicamente i grafici di cui si ha bisogno, adattandosi sia alla topologia della città, sia alle necessità specifiche che potrebbero sorgere in maniera imprevedibile (ad esempio potrebbe sopraggiungere la necessità di monitorare con maggiore granularità un'area della città in particolare, qualora si rilevasse un numero di guasti fuori norma).
 \\Gli amministratori potranno quindi creare alcuni grafici di interesse generale sempre disponibili e altri dinamicamente in base alle necessità, in maniera simile a quello che avviene nella navigazione di un data-warehouse, ma orientato alle serie di dati.
 I grafici sono creabili e consultabili utilizzando l'interfaccia web di Grafana. Qualora si rendesse necessario creare grafici estremamente personalizzati, è anche possibile scrivere direttamente le query per interrogare il database.
 \\Per il rilevamento di guasti, si possono generare grafici che mettono in risalto comportamenti al di fuori della media (lampioni che si accendono in orari completamente diversi dagli altri, Raspberry che improvvisamente smettono di inviare dati, ecc.).
-% TODO inserire uno screen di grafana
+\\Grafana può essere utilizzato anche per monitorare l'hardware (carico sulla cpu, memoria occupata, traffico di rete, ecc.), consentendo agli amministratori di analizzare l'impatto del traffico sul sistema e di valutare se e quando sia necessario un potenziamento.
+Alcuni esempi di grafici che è possibile generare sono presenti nelle figure \ref{GRAFANA-CPU}, \ref{GRAFANA-WEB-HITS} e \ref{GRAFANA-REAL}.
+\begin{figure}[tbp]
+	\centering
+	\includegraphics[scale=0.35]{figure/grafana_cpu.png}
+	\caption{Esempio di grafico: uptime, CPU e RAM \label{GRAFANA-CPU}}
+\end{figure}
+\begin{figure}[tbp]
+	\centering
+	\includegraphics[scale=0.43]{figure/grafana_web_hits.png}
+	\caption{Esempio di grafico: statistiche richieste HTTP \label{GRAFANA-WEB-HITS}}
+\end{figure}
+\begin{figure}[tbp]
+	\centering
+	\includegraphics[scale=0.45]{figure/grafana_real.png}
+	\caption{Esempio di grafico: valori massimi di luminosità impostati \label{GRAFANA-REAL}}
+\end{figure}
 
-\subsection{DBMS relazionale}
-Opzionalmente, si può valutare di utilizzare un database relazionale di supporto per memorizzare:
-\begin{itemize}
- \item l'anagrafica dei Raspberry dislocati sul territorio;
- \item le credenziali di accesso ai singoli Raspberry;
- \item eventuali dati statistici sintetici relativi allo storico dei guasti.
-\end{itemize}
-% TODO Da rivedere
-
+%\subsection{DBMS relazionale}
+% Non implementato
 
 \section{Implementazione della servlet \label{serv-impl}}
 Come descritto nell'architettura nel capitolo precedente, i dispositivi Raspberry non comunicano direttamente con il database, ma si affidano ad una o più istanze di una servlet intermediaria.
@@ -176,12 +186,13 @@ Altri parametri hard-coded sono:
 \section{Implementazione della parte embedded - Raspberry}
 In questa sezione verrà illustrata l'implementazione della parte Raspberry.
 
-\subsection{Raspberry Pi}
+\subsection{Hardware utilizzato}
 Come scritto in precedenza, per l'implementazione del progetto si è scelto di utilizzare i Raspberry Pi.
 Il Raspberry, realizzato in UK dalla Raspberry Pi Foundation, è un single-board computer delle dimensioni di una carta di credito dal prezzo contenuto (circa \$35).
-Nel corso degli anni sono state rilasciate diverse revisioni fino ad arrivare all’attuale versione 3.\\
-Per il progetto verrà utilizzata la versione 1 B+, perché la sua capacità elaborativa è più che sufficiente.
+Nel corso degli anni sono state rilasciate diverse revisioni fino ad arrivare all’attuale versione 3.
+\\Per il progetto verrà utilizzata la versione 1 B+, perché la sua capacità elaborativa è più che sufficiente.
 Tale versione del Raspberry Pi è basata sul system on a chip (SoC) Broadcom BCM2835 che include un processore ARM1176JZF-S 700 MHz, una GPU VideoCore IV e 512 MB di RAM.
+%TODO inserire in un elenco puntato tutti i componenti utilizzati. Inserire anche uno schema con Fritzing.
 
 \subsection{Sistema operativo e servizi di sistema}
 Per quanto riguarda il sistema operativo da utilizzare, la scelta è ricaduta sulla distribuzione Linux \textit{Raspbian}, in quanto è la distribuzione di riferimento e ufficialmente supportata per Raspberry e, basandosi su Debian, offre livelli di leggerezza, stabilità e sicurezza elevati.
@@ -334,8 +345,7 @@ Se invece si bruciasse un singolo LED, e il dispositivo embedded fosse in grado 
 \section{Implementazione dell'interfaccia Web di manutenzione}
 Come illustrato nella sezione \ref{si}, per permettere agli addetti ai lavori di controllare e modificare la programmazione dei singoli lampioni è stata implementata un'interfaccia Web tramite un server REST.
 Come misura di sicurezza, tutte le richieste GET e POST ai Raspberry dovranno essere corredate da nome utente e password relativi al singolo dispositivo embedded che si intende contattare.
-%(mmm, la storia del "dare ad un addetto solo le credenziali dei rpi della sua zona dove lo mettiamo?) --> nella sezione DBMS relazionale. Ma al momento non è implementato, quindi aspetto a scriverlo.
-Il sito Web è stato realizzato seguendo uno stile minimale, moderno e il quanto più intuitivo per l'utente.
+Il sito Web è stato realizzato seguendo uno stile minimale, moderno e il quanto più intuitivo per l'utente, con controlli sull'input che facilitano l'individuazione di errori (figura \ref{WD}).
 L'interfaccia è ottimizzata sia per un uso desktop che mobile.
 \begin{figure}[tbp]
 	\centering
