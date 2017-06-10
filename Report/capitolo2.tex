@@ -2,7 +2,7 @@
 
 In questo capitolo viene descritta l'architettura del progetto, derivata dall'analisi dei requisiti.
 
-\section{Architettura del sistema}
+\section{Architettura del sistema \label{arch}}
 Il sistema è costituito da due macro parti:
 \begin{itemize}
  \item un server che costituisce il punto di centralizzazione;
@@ -140,16 +140,14 @@ Il sistema Raspberry fornisce le seguenti funzionalità:
 
 \subsection{Architettura complessiva}
 %TODO Parlare del paradigma ad attori
-%TODO class diagram Raspberry Pi?
 
 \subsection{Raspberry Pi architettura REST}
-%TODO da ricontrollare e espandere?
-I Raspberry devono offrire un'interfaccia REST che permetta di:
+Come spiegato in precedenza nell'architettura del sistema (sezione \ref{arch}), i Raspberry devono offrire un'interfaccia REST che permetta di:
 \begin{itemize}
 	\item ottenere la configurazione attuale di un determinato lampione;
 	\item modificare le policy di accensione e spegnimento;
 	\item modificare le configurazioni per il risparmio energetico;
-	\item permettere di iniziare a concludere una fase di debug per poter fare prove sul funzionamento dei lampioni;
+	\item permettere di iniziare e concludere una fase di debug per poter fare prove sul funzionamento dei lampioni;
 	\item comunicare ai Raspberry vicini il sopraggiungere di un mezzo sulla carreggiata (comportamento locale ai Raspberry)
 \end{itemize}
 

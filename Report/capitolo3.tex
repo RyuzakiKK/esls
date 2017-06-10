@@ -192,7 +192,17 @@ Il Raspberry, realizzato in UK dalla Raspberry Pi Foundation, è un single-board
 Nel corso degli anni sono state rilasciate diverse revisioni fino ad arrivare all’attuale versione 3.
 \\Per il progetto verrà utilizzata la versione 1 B+, perché la sua capacità elaborativa è più che sufficiente.
 Tale versione del Raspberry Pi è basata sul system on a chip (SoC) Broadcom BCM2835 che include un processore ARM1176JZF-S 700 MHz, una GPU VideoCore IV e 512 MB di RAM.
-%TODO inserire in un elenco puntato tutti i componenti utilizzati. Inserire anche uno schema con Fritzing.
+I sensori e attuatori utilizzati per il progetto sono:
+\begin{itemize}
+ \item sensore ad ultrasuoni \textit{HC-SR04} per rilevare le eventuali auto in transito;
+ \item fotoresistenza digitale \textit{TSL2561} per poter regolare l'accensione dei lampioni in base alla luminosità ambientale;
+ \item un led per ogni lampione, utilizzati per l'illuminazione stradale.
+\end{itemize}
+\begin{figure}[tbp]
+	\centering
+	\includegraphics[width=13cm]{figure/Sketch_rpi.png}
+	\caption{Sketch sull'hardware utilizzzato}
+\end{figure}
 
 \subsection{Sistema operativo e servizi di sistema}
 Per quanto riguarda il sistema operativo da utilizzare, la scelta è ricaduta sulla distribuzione Linux \textit{Raspbian}, in quanto è la distribuzione di riferimento e ufficialmente supportata per Raspberry e, basandosi su Debian, offre livelli di leggerezza, stabilità e sicurezza elevati.
@@ -226,7 +236,7 @@ Come definito in fase di progettazione, i Raspberry devono poter eseguire divers
 La libreria \textit{threading} di Python, che permette ad un singolo programma l'esecuzione di più thread, è stata impiegata per tale scopo.
 
 \subsection{Controllo presenza auto \label{cpa}}
-Per controllare la presenza di auto sulla carreggiata viene effettuato il calcolo della distanza utilizzando il sensore ad ultrasuoni HC-SR04.
+Per controllare la presenza di auto sulla carreggiata viene effettuato il calcolo della distanza utilizzando il sensore ad ultrasuoni \textit{HC-SR04}.
 La misurazione avviene inviando un segnale ad ultrasuoni e calcolando il tempo che il segnale impiega per andare e tornare, rimbalzando sugli oggetti.
 Per calcolare la distanza in centimetri si moltiplica il tempo per la velocità del suono nell'aria (34300 cm/s) e il tutto viene diviso per 2 (perché il tempo è relativo all'andata e ritorno).
 Per mitigare eventuali errori nella rilevazione, vengono effettuate sempre due misurazioni, calcolando successivamente la media.
