@@ -137,18 +137,17 @@ Il sistema Raspberry fornisce le seguenti funzionalità:
  \item illuminazione di ogni singolo lampione in base alle politiche locali;
  \item programma principale che gestisce il web server REST e l'invio delle statistiche al server.
 \end{itemize}
+Essendo il software dei Raspberry composto da diverse parti tra loro autonome e concorrenti, si è scelto di utilizzare il paradigma ad attori, un modello computazionale concorrente a più alto livello rispetto alla gestione manuale dei thread.
+In questo modo ogni componente logica è un attore e la comunicazione avviene esclusivamente tramite scambio di messaggi.
 
-\subsection{Architettura complessiva}
-%TODO Parlare del paradigma ad attori
-
-\subsection{Raspberry Pi architettura REST}
+\subsection{Interfaccia REST}
 Come spiegato in precedenza nell'architettura del sistema (sezione \ref{arch}), i Raspberry devono offrire un'interfaccia REST che permetta di:
 \begin{itemize}
 	\item ottenere la configurazione attuale di un determinato lampione;
 	\item modificare le policy di accensione e spegnimento;
 	\item modificare le configurazioni per il risparmio energetico;
 	\item permettere di iniziare e concludere una fase di debug per poter fare prove sul funzionamento dei lampioni;
-	\item comunicare ai Raspberry vicini il sopraggiungere di un mezzo sulla carreggiata (comportamento locale ai Raspberry)
+	\item comunicare ai Raspberry vicini il sopraggiungere di un mezzo sulla carreggiata (comportamento locale ai Raspberry).
 \end{itemize}
 
 \subsection{Policy del sistema}

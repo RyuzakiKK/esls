@@ -113,7 +113,6 @@ Contiene i seguenti parametri:
  \item un timestamp relativo al momento della generazione dell'evento.
 \end{itemize}
 
-
 \subsection{Sistema di generazione di statistiche e grafici}
 Per analizzare in maniera efficace la grande quantità di dati potenzialmente archiviata del database InfluxDB si è scelto di utilizzare \textit{Grafana}, software specializzato nella generazione di grafici statistici basati sui dati contenuti in TS-DBMS.
 La scelta è ricaduta su questo strumento specifico in quanto è estremamente flessibile, consentendo agli amministratori di generare i grafici di loro interesse filtrando e aggregando i dati.
@@ -194,8 +193,8 @@ Nel corso degli anni sono state rilasciate diverse revisioni fino ad arrivare al
 Tale versione del Raspberry Pi è basata sul system on a chip (SoC) Broadcom BCM2835 che include un processore ARM1176JZF-S 700 MHz, una GPU VideoCore IV e 512 MB di RAM.
 I sensori e attuatori utilizzati per il progetto sono:
 \begin{itemize}
- \item sensore ad ultrasuoni \textit{HC-SR04} per rilevare le eventuali auto in transito;
- \item fotoresistenza digitale \textit{TSL2561} per poter regolare l'accensione dei lampioni in base alla luminosità ambientale;
+ \item un sensore ad ultrasuoni \textit{HC-SR04} per rilevare le auto in transito;
+ \item una fotoresistenza digitale \textit{TSL2561} per poter regolare l'accensione dei lampioni in base alla luminosità ambientale;
  \item un led per ogni lampione, utilizzati per l'illuminazione stradale.
 \end{itemize}
 \begin{figure}[tbp]
@@ -215,11 +214,11 @@ Per evitare che, col passare del tempo, l'orario vada fuori sincrono, si è impo
 Il servizio SSH (Secure Shell) è utilizzato da tutti i tecnici che intendono effettuare modifiche più avanzate allo scheduling dei lampioni rispetto a quelle che si potrebbero attuare attraverso l'interfaccia Web (come per esempio modificare lo scheduling di diversi lampioni contemporaneamente), o durante le operazioni di manutenzione del software.
 Ai fini di migliorare la sicurezza, analogamente a quanto impostato nella configurazione di SSH lato server (paragrafo \ref{ssh-server}), anche su Raspberry sono state aggiunte le stesse impostazioni di hardening rispetto alla configurazione di default.
 
-\subsection{Linguaggio di programmazione, paradigma ad attori e organizzazione a task}
-Per il programma in esecuzione sui Raspberry Pi si è scelto di utilizzare Python 3, linguaggio multi-paradigma, che ha tra i principali obiettivi dinamicità, semplicità e flessibilità.
+\subsection{Linguaggio di programmazione e concorrenza}
+Per il programma in esecuzione sui Raspberry Pi si è scelto di utilizzare Python 3, linguaggio multi-paradigma che ha tra i principali obiettivi dinamicità, semplicità e flessibilità.
 Inoltre, Python garantisce un elevato supporto per i sensori e attuatori attualmente disponibili, essendo il linguaggio di riferimento per la programmazione su Raspberry; altri linguaggi come Java o C potrebbero attualmente avere un supporto più limitato su diversi sensori e attuatori.
-\\Essendo il software dei Raspberry composto da diverse parti tra loro autonome e concorrenti, si è scelto di utilizzare il paradigma ad attori (tramite la libreria \textit{Pykka}), un modello computazione concorrente a più alto livello rispetto alla gestione manuale dei thread, in quanto si addice maggiormente alla struttura interna del progetto.
-In questo modo ogni componente logica è un attore e la comunicazione avviene esclusivamente tramite scambio di messaggi. In risposta ad un messaggio ricevuto un attore può:
+\\Per motivi di flessibilità, il paradigma ad attori è stato implementato (tramite la libreria \textit{Pykka}) in una versione ibrida, che consente agli attori di lanciare nuovi thread locali (tramite la libreria \textit{threading}), ovvero che interagiscono solo con l'attore che li ha generati.
+\\In risposta ad un messaggio ricevuto un attore può:
 \begin{itemize}
  \item prendere una decisione locale;
  \item creare nuovi attori;
@@ -233,7 +232,6 @@ Come definito in fase di progettazione, i Raspberry devono poter eseguire divers
  \item rilevamento dell'intensità luminosa;
  \item gestione dell'illuminazione dei lampioni in base ad uno scheduling.
 \end{itemize}
-La libreria \textit{threading} di Python, che permette ad un singolo programma l'esecuzione di più thread, è stata impiegata per tale scopo.
 
 \subsection{Controllo presenza auto \label{cpa}}
 Per controllare la presenza di auto sulla carreggiata viene effettuato il calcolo della distanza utilizzando il sensore ad ultrasuoni \textit{HC-SR04}.
