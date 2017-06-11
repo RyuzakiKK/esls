@@ -350,7 +350,7 @@ Ci si può accorgere facilmente di un gasto di questo tipo perché nei log sul s
 In questo caso il dispositivo embedded continuerebbe a funzionare correttamente, in quanto la gestione e lo scheduling dei lampioni avviene completamente in modo locale.
 Anche in questo caso ci si può accorgere di tale problema verificando la mancanza di log da parte di quel dispositivo embedded.
 Se invece si bruciasse un singolo LED, e il dispositivo embedded fosse in grado di accorgersene, potrebbe avvertire il server centrale inviando un determinato tipo di messaggio.
-
+\newpage
 \section{Implementazione dell'interfaccia Web di manutenzione}
 Come illustrato nella sezione \ref{si}, per permettere agli addetti ai lavori di controllare e modificare la programmazione dei singoli lampioni è stata implementata un'interfaccia Web tramite un server REST.
 Come misura di sicurezza, tutte le richieste GET e POST ai Raspberry dovranno essere corredate da nome utente e password relativi al singolo dispositivo embedded che si intende contattare.

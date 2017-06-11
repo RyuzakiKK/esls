@@ -99,16 +99,16 @@ Le comunicazioni in ingresso e in uscita dalla servlet seguono il paradigma REST
 \paragraph{Interfaccia REST}
 La servlet espone l'interfaccia REST descritta in figura \ref{API REST SERVLET}, utilizzata dai Raspberry.
 L'entry point \textit{changeLightIntensity} è utilizzato per notificare un avvenuto cambio di intensità luminosa (a causa delle policy impostate sul Raspberry); \textit{changePolicy} notifica l'avvenuta reimpostazione delle policy (a causa dell'intervento di un operatore attraverso l'interfaccia web); \textit{notifyError} notifica un problema di funzionamento.
-\begin{figure}[tbp]
+\begin{figure}[h]
 	\centering
 	\includegraphics[scale=.8]{figure/Class_Diagram_Server_REST.png}
 	\caption{API REST Servlet \label{API REST SERVLET}}
 \end{figure}
 \paragraph{Diagramma di sequenza}
 In figura \ref{SEQ RPI TO SERVER} sono mostrate le interazioni tra Raspberry e servlet, e tra servlet e TS-DBMS.
-\begin{figure}[tbp]
+\begin{figure}[h!]
 	\centering
-	\includegraphics[scale=.65]{figure/Sequence_Diagram_rpi_to_server.png}
+	\includegraphics[scale=.63]{figure/Sequence_Diagram_rpi_to_server.png}
 	\caption{Diagramma di sequenza delle comunicazioni tra Raspberry, servlet e TS-DBMS \label{SEQ RPI TO SERVER}}
 \end{figure}
 
@@ -180,6 +180,7 @@ Dopo aver aspettato qualche secondo, ritorna allo stato iniziale \textit{waiting
 	\includegraphics[scale=.75]{figure/Statemachine_Ultrasonic.png}
 	\caption{Finished State Machine riguardante la parte di controllo presenza auto \label{FSM CAR}}
 \end{figure}
+\newpage
 \paragraph{Cambiamento di stato dei lampioni}
 Utilizzando il diagramma di sequenza in figura \ref{SD CAR}, è stato rappresentato il cambio di stato da parte di due lampioni dal risparmio energetico alla piena potenza dopo la rilevazione di un'auto in transito.
 Inizialmente i lampioni si trovano nello stato di risparmio energetico e viene effettuata una misurazione da parte del sensore di prossimità che restituisce la lettura rappresentata da \textit{d}.
@@ -198,7 +199,7 @@ Notificare i vicini è necessario per due motivi:
 	\item i lampioni successivi si potranno accendere tempestivamente;
 	\item nel caso si giungesse ad un incrocio, verranno notificati tutti i dispositivi embedded relativi alle strade dell'intersezione.
 \end{itemize}
-
+\newpage
 \subsection{Controllo luminosità ambientale}
 Questa parte si occupa di controllare l'intensità luminosa ambientale e di notificare i lampioni in modo che possano accendersi o spegnersi se il valore di luminosità fosse maggiore o minore di una certa soglia impostata nelle loro policy.
 \paragraph{Architettura}
@@ -233,7 +234,6 @@ Infine, verrà mostrato all'utente l'esito di tale operazione.
 	\caption{Sequence diagram per la comunicazione tra web server e Raspberry Pi \label{SD WEB}}
 \end{figure}
 
-
 \newpage
 \section{Deployment}
 Essendo i vari dispositivi Raspberry necessariamente dislocati sul territorio, si può agire su di essi solo variando il numero di lampioni controllati da ognuno.
@@ -246,20 +246,20 @@ Una soluzione è quella di installare tutti i servizi su un unico server (figura
 Questo minimizza i costi di deployment, ma limita le prestazioni e porta alla costituzione di un pericoloso ``single point of failure''.
 La riduzione delle prestazioni può non essere un problema nel caso di sistemi di dimensioni ridotte, mentre lo è su sistemi più estesi.
 La costituzione di un ``single point of failure'', invece, è da tenere bene in considerazione, in quanto un guasto sul server potrebbe causare problemi a tutto il sistema.
-\begin{figure}[tbp]
+\begin{figure}[h]
 	\centering
 	\includegraphics[scale=.5]{figure/Deployment_Diagram_2.png}
 	\caption{Diagramma di deployment (server centralizzato) \label{DD CENT}}
 \end{figure}
-
+\newpage
 \subsection{Distribuzione}
 La soluzione più scalabile e consigliata è quella di installare i vari servizi su server separati (figura \ref{DD DIST}): questo porta ad un forte incremento delle prestazioni, e riduce l'impatto derivante da eventuali guasti.
-\begin{figure}[tbp]
+\begin{figure}[h]
 	\centering
 	\includegraphics[scale=.45]{figure/Deployment_Diagram_1.png}
 	\caption{Diagramma di deployment (server distribuito) \label{DD DIST}}
 \end{figure}
-
+\newpage
 \subsection{Layer di smistamento}
 Un'ulteriore soluzione prevede di utilizzare un layer di smistamento, installando più istanze della servlet su server diversi (figura \ref{DD LAYERED}).
 In questo modo il nucleo del traffico non convergerebbe direttamente sul server centrale, ma verrebbe smistato precedentemente, facendo attività di load balancing.
@@ -270,7 +270,7 @@ Inoltre, in caso di problemi con un'istanza specifica della servlet, solo i Rasp
 	\caption{Diagramma di deployment (server distribuito) \label{DD LAYERED}}
 \end{figure}
 
-
+\newpage
 \section{Sicurezza}
 Come evidenziato in fase di analisi dei requisiti, la sicurezza è un fattore critico per il successo del sistema.
 Si rende quindi essenziale considerare la sicurezza già in fase di progettazione, in modo da minimizzare il numero e l'impatto delle eventuali vulnerabilità residue.

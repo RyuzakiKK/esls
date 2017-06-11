@@ -33,13 +33,13 @@ In ogni caso, come precedentemente affermato, si raccomanda di non confidare ecc
 Per quanto riguarda gli unit tests della parte Raspberry, si è cercato di ottenere una buona copertura delle funzioni più complesse.
 In tutti i test è stato utilizzato il framework \textit{unittest} di Python, inizialmente ispirato a \textit{JUnit} di Java.
 
-\subsubsection{Main Sanity Check \label{msc}}
+\subsection{Main Sanity Check \label{msc}}
 In questo test si è controllata la correttezza della funzione \textit{sanity\_check} presente nel \textit{main}, richiamata durante la normale esecuzione del programma quando le policy di un lampione vengono modificate, per assicurare che i dati inseriti siano validi.
 I controlli che esegue passano dai più intuitivi, come il fatto che l'orario debba essere nell'intervallo numerico 0-23, ai più complessi, come la verifica che la fascia oraria di risparmio energetico sia compresa tra l'inizio e la fine delle policy di accensione e spegnimento.
 \\Poiché l'inserimento di fasce orarie include alcuni casi particolari come l'inizio delle policy in un giorno e la fine nel seguente, scrivere un test per validare l'input è di notevole aiuto per prevenire molti errori che potrebbero presentarsi nell'utilizzo reale.
 In questo caso, potendo essere influente anche il giorno e l'orario in cui si effettua il controllo, si è utilizzata la funzione \textit{patch} offerta da \textit{unittest.mock} per modificare a piacimento il valore relativo alla data corrente.
 
-\subsubsection{Classe ``Lamp''}
+\subsection{Classe ``Lamp''}
 Sulla classe \textit{lamp} sono stati testati i due metodi statici \textit{get\_delta} e \textit{get\_wait}.
 \\Il metodo \textit{get\_delta} prende come parametri un orario di inizio e uno di fine, e restituisce i secondi di differenza tra i due orari.
 Per questo tipo di test si è inserito un orario di inizio uguale alla fine, un orario di fine maggiore di quello di partenza, quindi relativo allo stesso giorno, e un orario di fine minore, quindi relativo al giorno seguente.
@@ -48,7 +48,7 @@ Se l'orario attuale è già all'interno del periodo di scheduling, verrà restit
 In questo caso sono stati effettuati diversi test combinando i possibili orari di inizio, fine e l'orario in cui viene effettuata la richiesta.
 Per modificare l'orario della richiesta è stata usata la funzione \textit{patch} come nel caso precedente (sezione \ref{msc}).
 
-\subsubsection{Classe ``RPiMockGPIO''}
+\subsection{Classe ``RPiMockGPIO''}
 Per simulare i pin di GPIO del Raspberry Pi è stata creata la classe \textit{RPiMockGPIO} in modo da simulare l'esecuzione del programma anche senza l'utilizzo fisico di un Raspberry.
 Questo si rivela particolarmente utile in fase di design, quando si vuole testare il codice senza avere a disposizione l'hardware.
 \\La funzione di GPIO maggiormente significativa che viene utilizzata nel programma è \textit{wait\_for\_edge} e consiste nell'attesa che un determinato pin cambi stato.
@@ -58,7 +58,7 @@ Tenendo conto del tempo trascorso tra l'inizio e la fine dell'esecuzione di \tex
 Per questo motivo, regolando il valore di \textit{wait\_seconds} è possibile simulare diversi scenari: impostando un valore alto (come ad esempio un secondo) si può simulare una situazione in cui non ci siano mezzi in transito sulle carreggiate;
 impostando un valore basso (come 0.001 secondi) si potrà rilevare sempre le auto in transito.
 
-\subsubsection{Schedule test \label{st}}
+\subsection{Schedule test \label{st}}
 Questo test permette di controllare la correttezza durante le operazioni di inizializzazione del sistema, di accensione dei lampioni quando si è nella fascia di scheduling, e di successivo spegnimento.
 \\La configurazione del test prevede:
 \begin{itemize}
@@ -71,7 +71,7 @@ Avendo impostato inizialmente l'orario corrente a dieci secondi dall'inizio dell
 La sua intensità deve corrispondere a quella impostata sul file \textit{cfg}.
 Infine, si imposta l'ora corrente ad un minuto dopo la fine dello scheduling e si verifica il corretto spegnimento del lampione.
 
-\subsubsection{Test rilevamento auto}
+\subsection{Test rilevamento auto}
 In questo test viene controllata la correttezza delle operazioni di inizializzazione del sistema, rilevamento di mezzi in transito sulla carreggiata, ritorno a luminosità ridotta quando non sono presenti auto e infine spegnimento alla fine dello scheduling.
 \\La configurazione del test prevede:
 \begin{itemize}
