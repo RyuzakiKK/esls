@@ -201,7 +201,7 @@ In figura \ref{sketch} è presente lo schema di collegamento dei componenti.
 \begin{figure}[tbp]
 	\centering
 	\includegraphics[width=13cm]{figure/Sketch_rpi.png}
-	\caption{Sketch sull'hardware utilizzzato \label{sketch}}
+	\caption{Schema di collegamento dei componenti hardware \label{sketch}}
 \end{figure}
 
 \subsection{Sistema operativo e servizi di sistema}
@@ -254,8 +254,6 @@ Inoltre, si è utilizzata la funzione \textit{wait\_for\_edge} che permette di f
 \\Per impostazione predefinita, il processo di misurazione considera la presenza di un veicolo sulla strada se la distanza rilevata è minore di due metri.
 Tale valore può essere facilmente regolato in base alle caratteristiche della strada in cui si intende installare i sensori.
 Il processo di controllo presenza auto è rappresentato da un attore il quale, dopo aver effettuato un controllo, notifica tutti i lampioni interessati.
-
-\newpage
 \lstinputlisting{code/ultrasonic.py}
 
 \subsection{Rilevamento intensità luminosa}
@@ -319,9 +317,7 @@ La quarta sezione è \textit{LampEnergySaving} e prevede cinque campi:
 \end{itemize}
 Per motivi di coerenza, gli orari di inizio e di fine della modalità di risparmio energetico devono essere obbligatoriamente compresi tra quelli impostati in \textit{LampPolicyOn} e \textit{LampPolicyOff}.
 In definitiva, grazie a tale implementazione, si è reso possibile sia la modifica dello scheduling di un singolo lampione con la comodità dell'interfaccia web, sia una modifica più avanzata collegandosi tramite SSH ad un Raspberry e cambiando i valori manualmente sui file di configurazione.
-
 \lstinputlisting{code/light0.cfg}
-\newpage
 
 \subsection{Messaggi a fini statistici}
 Quando i dispositivi embedded eseguono azioni rilevanti (accensione e spegnimento dei lampioni e impostazioni di policy), inviano ad un'istanza della servlet (sezione \ref{serv-impl}) un messaggio \textit{JSON} per consentire agli addetti ai lavori di avere una panoramica generale sull'andamento dell'intero sistema.
@@ -350,8 +346,10 @@ Ci si può accorgere facilmente di un gasto di questo tipo perché nei log sul s
 In questo caso il dispositivo embedded continuerebbe a funzionare correttamente, in quanto la gestione e lo scheduling dei lampioni avviene completamente in modo locale.
 Anche in questo caso ci si può accorgere di tale problema verificando la mancanza di log da parte di quel dispositivo embedded.
 Se invece si bruciasse un singolo LED, e il dispositivo embedded fosse in grado di accorgersene, potrebbe avvertire il server centrale inviando un determinato tipo di messaggio.
-\newpage
+
+
 \section{Implementazione dell'interfaccia Web di manutenzione}
+%TODO Qui sotto scrivi ``come illustrato nella sezione \ref{si}'', ma non mi sembra che in quella sezione ci sia un riferimento a quanto scrivi dopo. O no?
 Come illustrato nella sezione \ref{si}, per permettere agli addetti ai lavori di controllare e modificare la programmazione dei singoli lampioni è stata implementata un'interfaccia Web tramite un server REST.
 Come misura di sicurezza, tutte le richieste GET e POST ai Raspberry dovranno essere corredate da nome utente e password relativi al singolo dispositivo embedded che si intende contattare.
 Il sito Web è stato realizzato seguendo uno stile minimale, moderno e il quanto più intuitivo per l'utente, con controlli sull'input che facilitano l'individuazione di errori (figura \ref{WD}).
@@ -367,7 +365,6 @@ L'interfaccia è ottimizzata sia per un uso desktop che mobile.
 	\label{fig:example}%
 \end{figure}
 
-\newpage
 \subsection{Linguaggi e librerie}
 Nella scelta se realizzare un sito dinamico (con PHP o tecnologie simili) o statico (utilizzando esclusivamente HTML, CSS e Javascript), si è optato per la seconda possibilità, poiché:
 \begin{itemize}
