@@ -181,6 +181,13 @@ Altri parametri hard-coded sono:
  \item \textit{BODY\_SIZE\_LIMIT}: limita la dimensione del buffer per le richieste HTTP in ingresso (utile per mitigare gli attacchi DDoS)
 \end{itemize}
 
+\subsection{Automatizzazione e deployment}
+Al fine di automatizzare lo sviluppo della servlet, è stato utilizzato \textit{Gradle}, che consente di generare rapidamente i file di progetto per svariati IDE, di scaricare e configurare le dipendenze, di compilare il codice, testarlo e prepararlo per la distribuzione.
+È possibile eseguire queste operazioni anche manualmente ma, poiché nel corso dello sviluppo devono essere eseguite molte volte, è più conveniente automatizzarle.
+\\Si è valutato di distribuire la servlet come file \textit{jar} contenente tutte le dipendenze, al fine di velocizzarne il trasferimento sui server che lo dovranno eseguire.
+Gli installatori valuteranno il metodo più opportuno per eseguirlo: si suggerisce la creazione di uno script di lancio contenente i parametri che si vogliono passare.
+Una buona scelta è quella di configurare la servlet come servizio di sistema, in modo che sia indipendente dagli utenti umani.
+
 
 \section{Implementazione della parte embedded - Raspberry}
 In questa sezione verrà illustrata l'implementazione della parte Raspberry.
@@ -279,7 +286,6 @@ se alle 19:00 l'intensità luminosa rilevata fosse minore di 50, i lampioni si a
 Al contrario, se la luminosità rilevata fosse bassa, questo potrebbe anche essere dovuto a residui di sporco che con il tempo potrebbero depositarsi sul sensore.
 Quindi anche se si rileva un livello di luminosità basso, si aspetta comunque l'orario impostato per accendere i lampioni.
 \\La programmazione temporale viene espressa con precisione al minuto, poiché considerare anche i secondi comporterebbe un livello di precisione inutilmente elevato per questo scenario applicativo.
-
 \paragraph{Configurazione lampioni}
 La configurazione dei lampioni potrebbe essere salvata:
 \begin{itemize}
@@ -293,7 +299,7 @@ Salvando le configurazioni in locale su ogni Raspberry si ha una maggiore resist
 un file di testo con una certa sintassi permette di controllare i valori salvati e di modificarli anche manualmente agendo direttamente sul file senza effettuare complicate query SQL.
 \\Considerando i requisiti di progettazione come l'affidabilità del sistema e la facilità di gestione, si è scelto di salvare le configurazioni utilizzando un file di testo locale su ogni dispositivo embedded.
 Eventualmente il deploy dei dispositivi embedded potrebbe essere automatizzato, ad esempio tramite l'utilizzo di software quali \textit{Ansible} o \textit{Puppet}.
-Grazie a questa scelta gli addetti ai lavori possono effettuare una programmazione agevole su ogni singolo lampione sia tramite interfaccia web che direttamente modificando i file di testo (tramite SSH o localmente).
+Grazie a questa scelta gli addetti ai lavori possono effettuare una programmazione agevole su ogni singolo lampione sia tramite interfaccia web REST, sia modificando direttamente i file di testo (tramite SSH o localmente).
 \\Per il formato con cui vengono salvate le configurazioni si è scelto di utilizzare il \textit{Configuration file parser} presente nelle librerie standard di Python, perché permette la creazione di configurazioni con un linguaggio semplice, con una struttura simile ai file \textit{INI} di Microsoft Windows.
 Questo garantisce una facile lettura e modifica anche manuale dei file. I file così creati hanno estensione \textit{cfg} e contengono quattro sezioni principali con diversi campi ciascuna.
 \\La prima sezione è \textit{GENERAL} e prevede tre campi:
@@ -349,7 +355,6 @@ Se invece si bruciasse un singolo LED, e il dispositivo embedded fosse in grado 
 
 
 \section{Implementazione dell'interfaccia Web di manutenzione}
-%TODO Qui sotto scrivi ``come illustrato nella sezione \ref{si}'', ma non mi sembra che in quella sezione ci sia un riferimento a quanto scrivi dopo. O no?
 Come illustrato nella sezione \ref{si}, per permettere agli addetti ai lavori di controllare e modificare la programmazione dei singoli lampioni è stata implementata un'interfaccia Web tramite un server REST.
 Come misura di sicurezza, tutte le richieste GET e POST ai Raspberry dovranno essere corredate da nome utente e password relativi al singolo dispositivo embedded che si intende contattare.
 Il sito Web è stato realizzato seguendo uno stile minimale, moderno e il quanto più intuitivo per l'utente, con controlli sull'input che facilitano l'individuazione di errori (figura \ref{WD}).
