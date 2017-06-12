@@ -3,7 +3,7 @@
 In questo capitolo viene descritta l'architettura del progetto, derivata dall'analisi dei requisiti.
 
 \section{Architettura del sistema \label{arch}}
-Il sistema è costituito da due macro parti:
+Il sistema è costituito da due macro-parti:
 \begin{itemize}
  \item un server che costituisce il punto di centralizzazione;
  \item un insieme di dispositivi embedded che dialogano con il server.
@@ -43,8 +43,8 @@ Poiché la parte server ricopre un ruolo centrale nel sistema, è necessario val
 \paragraph{Acquisto di server dedicati}
 Una prima possibilità è quella di acquistare server dedicati.
 Questa modalità prevede un investimento iniziale maggiore e richiede di sostenere direttamente tutti i costi di gestione nel tempo, quali elettricità, sistemi di raffreddamento, gruppi di continuità, sostituzione dei componenti difettosi e impiego di personale specializzato.
-Questo potrebbe essere un problema nel caso i server da gestire (compresi anche quelli non collegati a questo sistema) fossero pochi, in quanto i costi difficilmente sarebbero ammortizzati.
-Ma soprattutto, le necessità in termini di prestazioni in un sistema di questo tipo possono essere molto variabili con il crescere del sistema stesso.
+Questo potrebbe essere un problema nel caso in cui i server da gestire (compresi anche quelli non collegati a questo sistema) fossero pochi, in quanto i costi difficilmente sarebbero ammortizzati.
+E inoltre, le necessità in termini di prestazioni in un sistema di questo tipo possono essere molto variabili con il crescere del sistema stesso.
 Una città che optasse per l'acquisto di server dedicati, dovrebbe necessariamente acquistarli con prestazioni sovradimensionate rispetto all'utilizzo iniziale, in previsione del carico a regime.
 Questa opzione è consigliabile nel caso la città sia già in possesso dei server utilizzati per altri scopi.
 \paragraph{Server cloud IaaS}
@@ -52,7 +52,7 @@ Una seconda possibilità è quella di affidarsi ad un provider di servizi cloud 
 Sarebbe comunque necessario un sistemista per l'installazione e la manutenzione regolare del software sul server, a partire dal sistema operativo.
 Inoltre, diventa possibile un rapido ridimensionamento delle risorse hardware allocate ai server, per far fronte alle richieste crescenti nel tempo (ipotizzando che i Raspberry vengano installati in maniera progressiva), riducendo i costi iniziali.
 \paragraph{Server Cloud PaaS}
-Utilizzando server cloud \textit{PaaS}, l'astrazione si sposta di un livello verso l'alto, in quando si rimuove la necessità di gestire il sistema operativo, focalizzandosi solo sui servizi.
+Utilizzando server cloud \textit{PaaS}, l'astrazione si sposta di un livello verso l'alto, in quanto si rimuove la necessità di gestire il sistema operativo, focalizzandosi solo sui servizi.
 In questo modo si semplifica ulteriormente la gestione, a costo di una minore configurabilità dei servizi (si è molto più soggetti all'offerta del provider scelto).
 \paragraph{Scelta finale}
 Valutate le alternative, si è deciso di scartare l'acquisto di server dedicati, poiché si è ritenuto più importante consentire il rapido ridimensionamento delle risorse hardware dedicate, garantendo scalabilità.
@@ -77,7 +77,7 @@ Per questi motivi si è valutata l'opportunità di archiviarli su un database no
 I \textit{time series database} (TS-DBMS) sono stati ideati precisamente per venire incontro a queste esigenze.
 Un TS-DBMS consente di creare, enumerare, aggiornare, eliminare ed organizzare serie temporali.
 L'organizzazione può essere gerarchica e includere metadati associati.
-È possibile eseguire operazioni su intere serie di dati come la moltiplicazione, addizione e combinare più serie di dati in un'unica, applicando trasformazioni.
+È possibile eseguire operazioni su intere serie di dati come la moltiplicazione, l'addizione e combinare più serie di dati in un'unica serie, applicando trasformazioni.
 I dati possono essere filtrati basandosi su pattern temporali, valori di soglia minimi e massimi o altre funzioni matematiche.
 \paragraph{Formato dei dati}
 I dati memorizzati sul TS-DBMS sono legati da un rapporto di cardinalità uno a uno con quelli relativi ai messaggi inviati dai Raspberry e contengono:
@@ -99,7 +99,7 @@ Le comunicazioni in ingresso e in uscita dalla servlet seguono il paradigma REST
 \paragraph{Interfaccia REST}
 La servlet espone l'interfaccia REST descritta in figura \ref{API REST SERVLET}, utilizzata dai Raspberry.
 L'entry point \textit{changeLightIntensity} è utilizzato per notificare un avvenuto cambio di intensità luminosa (a causa delle policy impostate sul Raspberry); \textit{changePolicy} notifica l'avvenuta reimpostazione delle policy (a causa dell'intervento di un operatore attraverso l'interfaccia web); \textit{notifyError} notifica un problema di funzionamento.
-\begin{figure}[h]
+\begin{figure}[ht]
 	\centering
 	\includegraphics[scale=.8]{figure/Class_Diagram_Server_REST.png}
 	\caption{API REST Servlet \label{API REST SERVLET}}
@@ -131,8 +131,8 @@ In aggiunta al TS-DBMS, si può valutare anche l'utilizzo di un DBMS relazionale
 \section{Progettazione Raspberry}
 Il sistema Raspberry fornisce le seguenti funzionalità:
 \begin{itemize}
- \item rilevamento illuminazione ambientale con il sensore di luce;
- \item rilevamento presenza di automobili con i sensori di prossimità;
+ \item rilevamento dell'illuminazione ambientale con il sensore di luce;
+ \item rilevamento della presenza di automobili con i sensori di prossimità;
  \item illuminazione di ogni singolo lampione in base alle politiche locali;
  \item programma principale che gestisce il web server REST e l'invio delle statistiche al server.
 \end{itemize}
@@ -197,6 +197,7 @@ Notificare i vicini è necessario per due motivi:
 	\item nel caso si giungesse ad un incrocio, verranno notificati tutti i dispositivi embedded relativi alle strade dell'intersezione.
 \end{itemize}
 
+\newpage
 \subsection{Controllo luminosità ambientale}
 Questa parte si occupa di controllare l'intensità luminosa ambientale e di notificare i lampioni in modo che possano accendersi o spegnersi se il valore di luminosità fosse maggiore o minore di una certa soglia impostata nelle loro policy.
 \paragraph{Architettura}
@@ -207,7 +208,7 @@ il secondo si occupa di eseguire la lettura dell'intensità luminosa e di notifi
 \\Il secondo parte dallo stato \textit{waiting} ed esegue una lettura se la lista dei lampioni non è vuota.
 In seguito invia la lettura effettuata a tutti gli elementi della lista e aspetta nello stato \textit{prMeasured} per qualche secondo.
 Infine torna nello stato \textit{waiting}.
-\begin{figure}[tbp]
+\begin{figure}[ht!]
 	\centering
 	\includegraphics[scale=.8]{figure/Statemachine_Photoresistor.png}
 	\caption{Finished State Machine riguardante la lettura della luminosità ambientale \label{FSM PR}}
@@ -224,7 +225,7 @@ Il Raspberry ottiene le policy in formato JSON dal lampione 1 e restituisce tali
 \\Il secondo esempio è simile al primo, con la differenza che in questo caso l'utente intende effettuare una modifica alla policy on del lampione 1.
 Quindi il web server questa volta invierà una POST al Raspberry di competenza, il quale notificherà del cambiamento il lampione coinvolto.
 Infine, verrà mostrato all'utente l'esito di tale operazione.
-\begin{figure}[tbp]
+\begin{figure}[ht]
 	\centering
 	\includegraphics[scale=.55]{figure/Sequence_Diagram_WebServer.png}
 	\caption{Sequence diagram per la comunicazione tra web server e Raspberry Pi \label{SD WEB}}
@@ -242,7 +243,7 @@ Una soluzione è quella di installare tutti i servizi su un unico server (figura
 Questo minimizza i costi di deployment, ma limita le prestazioni e porta alla costituzione di un pericoloso ``single point of failure''.
 La riduzione delle prestazioni può non essere un problema nel caso di sistemi di dimensioni ridotte, mentre lo è su sistemi più estesi.
 La costituzione di un ``single point of failure'', invece, è da tenere bene in considerazione, in quanto un guasto sul server potrebbe causare problemi a tutto il sistema.
-\begin{figure}[h]
+\begin{figure}[ht]
 	\centering
 	\includegraphics[scale=.5]{figure/Deployment_Diagram_2.png}
 	\caption{Diagramma di deployment (server centralizzato) \label{DD CENT}}
@@ -250,7 +251,7 @@ La costituzione di un ``single point of failure'', invece, è da tenere bene in 
 
 \subsection{Distribuzione}
 La soluzione più scalabile e consigliata è quella di installare i vari servizi su server separati (figura \ref{DD DIST}): questo porta ad un forte incremento delle prestazioni, e riduce l'impatto derivante da eventuali guasti.
-\begin{figure}[h]
+\begin{figure}[ht]
 	\centering
 	\includegraphics[scale=.45]{figure/Deployment_Diagram_1.png}
 	\caption{Diagramma di deployment (server distribuito) \label{DD DIST}}
@@ -260,7 +261,7 @@ La soluzione più scalabile e consigliata è quella di installare i vari servizi
 Un'ulteriore soluzione prevede di utilizzare un layer di smistamento, installando più istanze della servlet su server diversi (figura \ref{DD LAYERED}).
 In questo modo il nucleo del traffico non convergerebbe direttamente sul server centrale, ma verrebbe smistato precedentemente, facendo attività di load balancing.
 Inoltre, in caso di problemi con un'istanza specifica della servlet, solo i Raspberry direttamente collegati ad essa ne risentirebbero.
-\begin{figure}[tbp]
+\begin{figure}[ht]
 	\centering
 	\includegraphics[scale=.45]{figure/Deployment_Diagram3v2.png}
 	\caption{Diagramma di deployment (server distribuito) \label{DD LAYERED}}
@@ -290,7 +291,7 @@ Questa è la scelta che è stata effettuata per il sistema.
 Una prima variante è quella di utilizzare una rete ad hoc separata da Internet.
 Questa opzione, sebbene possibile, sarebbe probabilmente inutilmente costosa, in quanto richiederebbe la realizzazione di una nuova rete, senza possibilità di riutilizzare quella esistente.
 Inoltre, la maggiore sicurezza derivante da questa architettura di rete appare ridondante, in quanto il protocollo TLS è sufficientemente sicuro da viaggiare su Internet senza rischi significativi.
-Questa via potrebbe essere utile nel caso si scegliesse di utilizzare dispositivi embedded a capacità computazionale estremamente ridotta, al punto da non essere in grado di eseguire i calcoli crittografici necessari a TLS, oppure nel caso il sistema (o parte di esso) fosse fisicamente collocato in zone isolate, dove non è stata portata connettività Internet cablata, oppure nel caso la città già disponga di una propria rete utilizzata per altri scopi (ad esempio telecamere di videosorveglianza).
+Questa via potrebbe essere utile nel caso si scegliesse di utilizzare dispositivi embedded a capacità computazionale estremamente ridotta, al punto da non essere in grado di eseguire i calcoli crittografici necessari a TLS, oppure nel caso in cui il sistema (o parte di esso) fosse fisicamente collocato in zone isolate, dove non è stata portata connettività Internet cablata, oppure nel caso la città già disponga di una propria rete utilizzata per altri scopi (ad esempio telecamere di videosorveglianza).
 \paragraph{VPN}
 Come alternativa alla crittografia basata su TLS, si può valutare di trasmettere i dati all'interno di tunnel VPN.
 Questa opzione potrebbe essere scelta per evitare l'implementazione della crittografia come parte di questo sistema, appoggiandosi ad un servizio di sistema (la VPN) già sviluppato da terzi.
@@ -299,7 +300,7 @@ Tuttavia, questa scelta richiederebbe un tunnel VPN per ogni Raspberry (o piccol
 \subsection{Sicurezza dei servizi}
 I vari componenti software saranno scritti utilizzando linguaggi di alto livello che prevengano vulnerabilità di tipo buffer overflow.
 In questo modo il problema viene spostato sugli interpreti o le macchine virtuali che eseguono il codice (ad esempio la \textit{Java Virtual Machine} (JVM) nel caso di Java).
-L'accesso ai servizi dovrà essere ristretto tramite oppurtune policy dei firewall, in modo da esporre solo i servizi strettamente indispensabili, restringendoli, dove possibile, anche in base agli indirizzi IP (ad esempio, il TS-DBMS dovrà essere accessibile solo dalla/e servlet, e non dai Raspberry o da Internet in generale).
+L'accesso ai servizi dovrà essere ristretto tramite opportune policy dei firewall, in modo da esporre solo i servizi strettamente indispensabili, restringendoli, dove possibile, anche in base agli indirizzi IP (ad esempio, il TS-DBMS dovrà essere accessibile solo dalla/e servlet, e non dai Raspberry o da Internet in generale).
 \paragraph{Virtualizzazione}
 La modalità di deployment distribuita precedentemente descritta contribuisce ad un maggiore isolamento dei servizi rispetto alla modalità centralizzata.
 Utilizzando macchine virtuali single-purpose è possibile mitigare notevolmente l'impatto di un'eventuale intrusione, dal momento che la compromissione di un server non implicherebbe quella totale di tutto il sistema.

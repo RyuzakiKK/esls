@@ -2,7 +2,7 @@
 
 \section{Requisiti}
 
-Il sistema precedentemente introdotto necessita dei seguenti requisiti:
+Il sistema introdotto necessita dei seguenti requisiti:
 \begin{itemize}
  \item estendibilità, ovvero deve essere possibile modificare, aggiungere o rimuovere dispositivi al sistema;
  \item dinamicità, ovvero deve essere possibile aggiungere, rimuovere o ricollocare i dispositivi embedded sul territorio, senza interrompere il servizio nel complesso;
@@ -27,7 +27,7 @@ Trattandosi di un sistema distribuito, deve inoltre essere possibile aggiornare 
 \\Ogni dispositivo embedded deve poter gestire un numero variabile di lampioni, in base alla topologia del territorio e alle esigenze del committente.
 
 \subsection{Dinamicità}
-Il sistema deve consentire l'aggiunta, rimozione e ricollocamento dei dispositivi embedded sul territorio, oltre ai relativi lampioni, senza dover spegnere il sistema nel complesso, in modo da non causare interruzioni del servizio.
+Il sistema deve consentire l'aggiunta, la rimozione e il ricollocamento dei dispositivi embedded sul territorio, oltre ai relativi lampioni, senza dover spegnere il sistema nel complesso, in modo da non causare interruzioni del servizio.
 Il sistema deve essere quindi adattabile ai cambiamenti delle configurazioni.
 
 \subsection{Alte prestazioni}
@@ -41,28 +41,28 @@ Questo è possibile grazie all'uso delle interfacce web e alla scalabilità dei 
 \end{itemize}
 Si stima quindi un numero di richieste giornaliere inviate nell'ordine delle 400000 unità [2000*(2+2+200)].
 Altre richieste potranno essere inviate dai dispositivi embedded in maniera straordinaria (quando viene modificata la loro configurazione), ma il loro numero è trascurabile rispetto a quelle ordinarie.
-\\Nei momenti di picco, è verosimile pensare a qualche centinaio di richieste contemporanee, che si verificano principalmente quando molti lampioni si accendono o spengono contemporaneamente, mentre nei momenti di traffico dati minore (durante il giorno) le richieste scenderebbero praticamente a zero.
+\\Nei momenti di picco, è verosimile pensare a qualche centinaio di richieste contemporanee, che si verifichino principalmente quando molti lampioni si accendono o spengono contemporaneamente, mentre nei momenti di traffico dati minore (durante il giorno) le richieste scenderebbero praticamente a zero.
 Se il numero di tali richieste aumentasse al punto da causare problemi al server nella gestione, sarebbe possibile, lato embedded, non inviare le richieste nell'esatto momento in cui si verificano, ma con un ritardo casuale compreso in un intervallo selezionabile, in modo da distribuire meglio le richieste nel tempo.
 In questo modo le informazioni sul server potrebbero non essere aggiornate all’istante, ma dopo qualche secondo o minuto.
 Questo non sarebbe un problema, poiché quelle informazioni hanno uno scopo esclusivamente statistico, quindi non è necessaria la loro immediata disponibilità.
 
 \subsection{Reattività}
 L'aspetto principale che influenza la reattività del sistema è la latenza di trasmissione ed elaborazione delle informazioni scambiate tra i dispositivi.
-Poiché la maggior parte del traffico dati è relativo alle informazioni di notifica dai dispositivi embedded al server ed essendo tali informazioni non critiche (utilizzate per la generazione di statistiche), è tollerabile qualche sporadica perdita o, nel caso di configurazioni cluster, lieve inconsistenza delle informazioni.
+Poiché la maggior parte del traffico dati è relativo alle informazioni di notifica dai dispositivi embedded al server ed essendo tali informazioni non critiche (utilizzate per la generazione di statistiche), è tollerabile qualche sporadica perdita o, nel caso di configurazioni cluster, una lieve inconsistenza delle informazioni.
 \\La quantità esatta di informazioni perse accettabili è dipendente dalla variabilità delle configurazioni impostate sui dispositivi embedded: nel caso di configurazioni molto statiche, si potrebbe accettare di perdere anche il 15\% di richieste, poiché queste sarebbero ricostruibili dai valori precedenti e successivi; in caso di configurazioni maggiormente dinamiche, sarebbe più opportuno un tasso di perdite inferiore al 3\%.
-Nell’utilizzo tipico comunque si prevede che il tasso medio di perdita rimanga sotto l’1\%: qualora dovesse aumentare, questo sarebbe un indice o di gravi problemi di connettività di rete, o di sottodimensionamento dell'infrastruttura server.
+Nell’utilizzo tipico comunque si prevede che il tasso medio di perdita rimanga sotto l’1\%: qualora dovesse aumentare, questo sarebbe un indice o di gravi problemi di connettività di rete o di sottodimensionamento dell'infrastruttura server.
 
 \subsection{Scalabilità}
 Il sistema deve essere in grado di far fronte all'elevato numero di richieste, direttamente proporzionali al numero di dispositivi embedded nel sistema.
 I lampioni da gestire sono nell'ordine di circa qualche migliaio, dipendentemente dall'ampiezza e dalla topologia della città che si intende coprire.
 Poiché il collo di bottiglia del sistema sarà costituito dai server sui quali vengono centralizzate le informazioni provenienti dai dispositivi embedded, è necessaria un'infrastruttura in grado di far fronte alle richieste.
-\\Ai fini di garantire la scalabilità, è necessario anche stabilire attentamente le modalità con cui archiviare i dati.
+\\Al fine di garantire la scalabilità, è necessario anche stabilire attentamente le modalità con cui archiviare i dati.
 Poiché la maggior parte dei dati archiviati sarà costituita dai messaggi di stato provenienti dai dispositivi embedded, la quantità di tali messaggi sarà notevole, ed essendo il \textit{timestamp} l'elemento caratterizzante di ogni record, appare sensato utilizzare un \textit{time series database} piuttosto che un database relazionale tradizionale: l'accesso ai dati avverrà sulla base del tempo al quale saranno stati registrati.
 Inoltre, un database di questo tipo rende agevole l'eliminazione o l'archiviazione offline dei dati più vecchi, al fine di liberare spazio e migliorare le prestazioni.
 
 \subsection{Robustezza}
 Il sistema dovrà essere tollerante ai guasti: il malfunzionamento di un dispositivo embedded non deve compromettere il resto del sistema, ma solo le risorse direttamente collegate ad esso.
-Per quanto riguarda il server, essendo un ``single point of failure'', si può prevenire guasti configurando server ridondanti.
+Per quanto riguarda il server, essendo un ``single point of failure'', si possono prevenire guasti configurando server ridondanti.
 In ogni caso, qualora il sistema server andasse del tutto offline o si verificassero problemi di rete che impediscono la comunicazione, i dispositivi embedded continuerebbero a funzionare localmente (rilevamento del passaggio di auto e accensioni e spegnimenti secondo l'ultima pianificazione impostata), garantendo ai tecnici tutto il tempo necessario per ripristinare il guasto.
 
 \subsection{Qualità del servizio adeguata}
@@ -70,8 +70,8 @@ Pur essendo il sistema finalizzato al risparmio energetico, questo non deve comp
 Tutti i dispositivi embedded eseguiranno un comportamento, visibile al pubblico, gestito localmente.
 Di conseguenza i fruitori del servizio, ovvero gli automobilisti di passaggio, non devono subire disagi da eventuali problemi di comunicazione con il server centrale.
 Invece, dal punto di vista del server, si richiede che le sue risorse siano tali da gestire indicativamente una cinquantina di richieste al giorno da ogni lampione (valore dipendente dalla topologia e dal traffico della città).
-\\Per l'accensione e spegnimento programmato dei lampioni non sono presenti vincoli stringenti in termini temporali, visto che anche un ritardo di qualche secondo, o persino minuto, nell'accensione o spegnimento non comprometterebbe la sicurezza degli automobilisti.
-Questo comportamento è comunque gestito localmente dai singoli dispositivi embedded, per cui non è condizionato da problemi di rete.
+\\Per l'accensione e lo spegnimento programmato dei lampioni non sono presenti vincoli stringenti in termini temporali, visto che anche un ritardo di qualche secondo, o persino minuto, nell'accensione o spegnimento non comprometterebbe la sicurezza degli automobilisti.
+Questo comportamento è comunque gestito localmente dai singoli dispositivi embedded, pertanto non è condizionato da problemi di rete.
 \\Per quanto riguarda l'accensione dei lampioni in sequenza dopo il rilevamento di un veicolo, bisogna garantire un buon livello di tempestività per evitare il transito dei veicoli con i lampioni ancora in modalità di risparmio energetico.
 Un tempo massimo adeguato per questo scopo, valutando una velocità dei veicoli non superiore ad 80 km/h (verosimilmente inferiore, trattandosi di centri abitati), si può stimare nell'ordine di qualche centinaio di millisecondi.
 Essendo il rilevamento e la successiva accensione comportamenti locali, tale vincolo potrà essere ampiamente rispettato senza particolari accorgimenti.

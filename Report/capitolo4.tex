@@ -1,6 +1,6 @@
 \chapter{Testing}
 
-In questo capitolo veranno descritte le metodologie di test.
+In questo capitolo saranno descritte le metodologie di test.
 
 \section{Testing della servlet}
 Sono stati definiti alcuni test per verificare il funzionamento delle principali parti del programma.
@@ -24,7 +24,7 @@ In base a quanto affermato in fase di analisi dei requisiti, il caso pessimo è 
 Sebbene tale caso pessimo sia molto distante da quello medio, si è valutato di verificare il comportamento della servlet con un carico di quelle dimensioni.
 \\Dai test effettuati, emerge che con l'aumentare delle richieste contemporanee, aumenta il tempo necessario ad elaborarle tutte.
 Tuttavia, su una rete a bassa latenza, anche con 150 richieste contemporanee la servlet non mostra particolari difficoltà, in quanto tutte vengono elaborate prima che vadano in timeout.
-Si ritiene che con un tale volume di richieste non si riscontrino particolari problemi anche su reti a media latenza, ma le prestazioni potrebbero essere differenti.
+Si ritiene che con un tale volume di richieste non si riscontrino particolari problemi anche su reti a media latenza, tuttavia le prestazioni potrebbero essere differenti.
 Poiché il tempo necessario per processare una singola richiesta è estremamente ridotto, in realtà la latenza di rete non solo non è particolarmente dannosa, ma in alcuni casi potrebbe anche contribuire ad un bilanciamento del carico nel tempo, smorzando i picchi.
 In ogni caso, come precedentemente affermato, si raccomanda di non confidare eccessivamente in una singola istanza della servlet per sistemi di grandi dimensioni, ma di suddividere il carico tra più servlet.
 
@@ -42,10 +42,10 @@ In questo caso, potendo essere influente anche il giorno e l'orario in cui si ef
 \subsection{Classe ``Lamp''}
 Sulla classe \textit{lamp} sono stati testati i due metodi statici \textit{get\_delta} e \textit{get\_wait}.
 \\Il metodo \textit{get\_delta} prende come parametri un orario di inizio e uno di fine, e restituisce i secondi di differenza tra i due orari.
-Per questo tipo di test si è inserito un orario di inizio uguale alla fine, un orario di fine maggiore di quello di partenza, quindi relativo allo stesso giorno, e un orario di fine minore, quindi relativo al giorno seguente.
+Per questo tipo di test si è inserito un orario di inizio uguale alla fine, un orario di fine maggiore di quello di partenza, pertanto relativo allo stesso giorno, e un orario di fine minore, quindi relativo al giorno seguente.
 \\Il metodo \textit{get\_wait}, in modo simile a \textit{get\_delta}, prende come parametri un orario di inizio e uno di fine, e restituisce i secondi di attesa necessari all'inizio del periodo di scheduling.
 Se l'orario attuale è già all'interno del periodo di scheduling, verrà restituito un valore negativo corrispondente al numero di secondi già trascorsi dall'inizio.
-In questo caso sono stati effettuati diversi test combinando i possibili orari di inizio, fine e l'orario in cui viene effettuata la richiesta.
+In questo caso sono stati effettuati diversi test combinando i possibili orari di inizio, di fine e l'orario in cui viene effettuata la richiesta.
 Per modificare l'orario della richiesta è stata usata la funzione \textit{patch} come nel caso precedente (sezione \ref{msc}).
 
 \subsection{Classe ``RPiMockGPIO''}
@@ -56,7 +56,7 @@ Nel progetto viene utilizzata tutte le volte che si vuole misurare la distanza c
 Tenendo conto del tempo trascorso tra l'inizio e la fine dell'esecuzione di \textit{wait\_for\_edge} è possibile calcolare la distanza dell'oggetto in prossimità del sensore.
 \\L'implementazione di \textit{wait\_for\_edge} nella classe RPiMockGPIO prevede semplicemente un \textit{time.sleep} su una variabile \textit{wait\_seconds}.
 Per questo motivo, regolando il valore di \textit{wait\_seconds} è possibile simulare diversi scenari: impostando un valore alto (come ad esempio un secondo) si può simulare una situazione in cui non ci siano mezzi in transito sulle carreggiate;
-impostando un valore basso (come 0.001 secondi) si potrà rilevare sempre le auto in transito.
+impostando un valore basso (come 0.001 secondi) si potranno rilevare sempre le auto in transito.
 
 \subsection{Schedule test \label{st}}
 Questo test permette di controllare la correttezza durante le operazioni di inizializzazione del sistema, di accensione dei lampioni quando si è nella fascia di scheduling, e di successivo spegnimento.
@@ -72,7 +72,7 @@ La sua intensità deve corrispondere a quella impostata sul file \textit{cfg}.
 Infine, si imposta l'ora corrente ad un minuto dopo la fine dello scheduling e si verifica il corretto spegnimento del lampione.
 
 \subsection{Test rilevamento auto}
-In questo test viene controllata la correttezza delle operazioni di inizializzazione del sistema, rilevamento di mezzi in transito sulla carreggiata, ritorno a luminosità ridotta quando non sono presenti auto e infine spegnimento alla fine dello scheduling.
+In questo test viene controllata la correttezza delle operazioni di inizializzazione del sistema, il rilevamento di mezzi in transito sulla carreggiata, il ritorno a luminosità ridotta quando non sono presenti auto e infine lo spegnimento alla fine dello scheduling.
 \\La configurazione del test prevede:
 \begin{itemize}
 	\item la lettura del file di configurazione di un lampione;
@@ -80,7 +80,7 @@ In questo test viene controllata la correttezza delle operazioni di inizializzaz
 	\item l'impostazione a zero secondi della variabile \textit{wait\_seconds}, permettendo di rilevare sempre mezzi in transito sulla carreggiata.
 \end{itemize}
 In seguito viene eseguito il \textit{main} e dopo pochi secondi si verifica che il lampione sia acceso, in quanto il sistema deve avere rilevato automobili sulla carreggiata.
-Successivamente si imposta la variabile \textit{wait\_seconds} ad un secondo, quindi in modo che non vengano più rilevate auto.
+Successivamente si imposta la variabile \textit{wait\_seconds} ad un secondo, in modo che non vengano più rilevate auto.
 Dopo qualche secondo di attesa si controlla che l'intensità del lampione corrisponda al suo valore di risparmio energetico.
 Infine, analogamente a quanto avviene per il test precedente (sezione \ref{st}), viene impostata l'ora corrente ad un minuto dopo la fine dello schedule e si verifica che il lampione si sia spento correttamente.
 

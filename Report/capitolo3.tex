@@ -48,7 +48,7 @@ Rispetto alla configurazione di default, sono state aggiunte alcune impostazioni
  \item abilitazione dei soli algorigmi crittografici di scambio chiavi considerati robusti (\textit{curve25519-sha256@libssh.org, diffie-hellman-group-exchange-sha256}), disabilitando quelli meno sicuri (presenti per retrocompatibilità);
  \item disabilitazione dei moduli per lo scambio chiavi Diffie-Hellman con chiave più corta di 2048 bit;
  \item utilizzare chiavi private per il server di adeguata lunghezza e solo con algoritmi sicuri (\textit{ed25519, rsa});
- \item impedire l'autenticazione dei client tramite password, ma solo tramite chiavi asimmetriche (\textit{PasswordAuthentication no; ChallengeResponseAuthentication no; PubkeyAuthentication yes});
+ \item impedire l'autenticazione dei client tramite password, ma consentirla solo tramite chiavi asimmetriche (\textit{PasswordAuthentication no; ChallengeResponseAuthentication no; PubkeyAuthentication yes});
  \item abilitazione dei soli algoritmi di crittografia simmetrica considerati robusti (\textit{chacha20-poly1305@openssh.com, aes256-gcm@openssh.com, aes128-gcm@openssh.com, aes256-ctr, aes192-ctr, aes128-ctr}), disabilitando quelli meno sicuri (presenti per retrocompatibilità);
  \item abilitazione dei soli algorigmi MAC (Message Authentication Code) considerati robusti (\textit{hmac-sha2-512-etm@openssh.com, hmac-sha2-256-etm@openssh.com, hmac-ripemd160-etm@openssh.com, umac-128-\linebreak etm@openssh.com, hmac-sha2-512, hmac-sha2-256, hmac-ripemd160, umac-128@openssh.com}), disabilitando quelli meno sicuri (presenti per retrocompatibilità);
  \item nel caso lo si ritenesse opportuno, è possibile implementare una forma di autenticazione a due fattori sfruttando un modulo PAM (Pluggable Authentication Module).
@@ -205,7 +205,7 @@ I sensori e attuatori utilizzati per il progetto sono:
  \item un led per ogni lampione, utilizzati per l'illuminazione stradale.
 \end{itemize}
 In figura \ref{sketch} è presente lo schema di collegamento dei componenti.
-\begin{figure}[tbp]
+\begin{figure}[ht!]
 	\centering
 	\includegraphics[width=13cm]{figure/Sketch_rpi.png}
 	\caption{Schema di collegamento dei componenti hardware \label{sketch}}
@@ -213,7 +213,7 @@ In figura \ref{sketch} è presente lo schema di collegamento dei componenti.
 
 \subsection{Sistema operativo e servizi di sistema}
 Per quanto riguarda il sistema operativo da utilizzare, la scelta è ricaduta sulla distribuzione Linux \textit{Raspbian}, in quanto è la distribuzione di riferimento e ufficialmente supportata per Raspberry e, basandosi su Debian, offre livelli di leggerezza, stabilità e sicurezza elevati.
-\\Queste caratteristiche sono di grande importanza in un sistema di questo tipo, ovvero in cui i Raspberry sono dislocati sul territorio e collegati in rete.
+\\Queste caratteristiche sono di grande importanza in un sistema di questo tipo, in cui i Raspberry sono dislocati sul territorio e collegati in rete.
 Ad ogni modo, sebbene la scelta sia ricaduta su Raspbian, è possibile utilizzare una qualsiasi altra distribuzione Linux semplicemente installando tutte le dipendenze che verranno utilizzate in fase di implementazione del progetto.
 \paragraph{Gestione del tempo}
 I messaggi che i Raspberry Pi inviano quando comunicano con il server contengono al loro interno anche un timestamp per fini statistici.
@@ -301,7 +301,7 @@ un file di testo con una certa sintassi permette di controllare i valori salvati
 Eventualmente il deploy dei dispositivi embedded potrebbe essere automatizzato, ad esempio tramite l'utilizzo di software quali \textit{Ansible} o \textit{Puppet}.
 Grazie a questa scelta gli addetti ai lavori possono effettuare una programmazione agevole su ogni singolo lampione sia tramite interfaccia web REST, sia modificando direttamente i file di testo (tramite SSH o localmente).
 \\Per il formato con cui vengono salvate le configurazioni si è scelto di utilizzare il \textit{Configuration file parser} presente nelle librerie standard di Python, perché permette la creazione di configurazioni con un linguaggio semplice, con una struttura simile ai file \textit{INI} di Microsoft Windows.
-Questo garantisce una facile lettura e modifica anche manuale dei file. I file così creati hanno estensione \textit{cfg} e contengono quattro sezioni principali con diversi campi ciascuna.
+Questo garantisce una facile lettura e la modifica anche manuale dei file. I file così creati hanno estensione \textit{cfg} e contengono quattro sezioni principali con diversi campi ciascuna.
 \\La prima sezione è \textit{GENERAL} e prevede tre campi:
 \begin{itemize}
  \item \textit{lamp\_id}: un identificativo intero progressivo del singolo lampione;
@@ -347,7 +347,7 @@ Una volta conclusa la fase di debug, i lampioni torneranno a funzionare seguendo
 Essendo questo un progetto che prevede l'utilizzo a regime di centinaia o migliaia di dispositivi embedded dislocati sul territorio, guasti hardware di varia natura possono verificarsi frequentemente.
 Per questo motivo sono stati presi in considerazione i vari tipi di guasti che potrebbero verificarsi, dal guasto dell'intera board embedded al guasto di rete, fino al guasto di un singolo lampione.
 \\Nel caso un dispositivo embedded smettesse di funzionare, solo i lampioni da esso gestiti non si accenderebbero più: il sistema nel complesso è in grado di funzionare indipendentemente dai singoli dispositivi che lo compongono.
-Ci si può accorgere facilmente di un gasto di questo tipo perché nei log sul server centrale si noterebbe la mancanza degli eventi di accensione e rilevamento auto da parte del sistema embedded guasto.
+Ci si può accorgere facilmente di un guasto di questo tipo perché nei log sul server centrale si noterebbe la mancanza degli eventi di accensione e rilevamento auto da parte del sistema embedded guasto.
 \\Un altro tipo di guasto potrebbe essere solo relativo alla funzionalità di rete.
 In questo caso il dispositivo embedded continuerebbe a funzionare correttamente, in quanto la gestione e lo scheduling dei lampioni avviene completamente in modo locale.
 Anche in questo caso ci si può accorgere di tale problema verificando la mancanza di log da parte di quel dispositivo embedded.
@@ -357,11 +357,11 @@ Se invece si bruciasse un singolo LED, e il dispositivo embedded fosse in grado 
 \section{Implementazione dell'interfaccia Web di manutenzione}
 Come illustrato nella sezione \ref{si}, per permettere agli addetti ai lavori di controllare e modificare la programmazione dei singoli lampioni è stata implementata un'interfaccia Web tramite un server REST.
 Come misura di sicurezza, tutte le richieste GET e POST ai Raspberry dovranno essere corredate da nome utente e password relativi al singolo dispositivo embedded che si intende contattare.
-Il sito Web è stato realizzato seguendo uno stile minimale, moderno e il quanto più intuitivo per l'utente, con controlli sull'input che facilitano l'individuazione di errori (figura \ref{WD}).
+Il sito Web è stato realizzato seguendo uno stile minimale, moderno e intuitivo per l'utente, con controlli sull'input che facilitano l'individuazione di errori (figura \ref{WD}).
 L'interfaccia è ottimizzata sia per un uso desktop che mobile.
 \begin{figure}[tbp]
 	\centering
-	\includegraphics[scale=.62]{figure/web_desktop.png}
+	\includegraphics[scale=.52]{figure/web_desktop.png}
 	\caption{Interfaccia web Desktop \label{WD}}
 	\subfloat[(Mobile) Campi corretti]{{\includegraphics[width=6cm]{figure/web_mobile.png} }}%
 	\qquad
@@ -379,6 +379,6 @@ Nella scelta se realizzare un sito dinamico (con PHP o tecnologie simili) o stat
  \item essendo il sito piuttosto semplice dal punto di vista delle funzionalità, realizzandolo staticamente è più facile ottenere un design più pulito.
 \end{itemize}
 Per quanto riguarda lo \textit{style sheet language}, si è valutato di utilizzare direttamente CSS invece di uno strumento di automatizzazione come SASS:
-il sito è composto da un'unica pagina Web, di conseguenza uno strumento di come SASS non sarebbe stato di particolare aiuto, e avrebbe inutilmente aggiunto complessità.
+il sito è composto da un'unica pagina Web, di conseguenza uno strumento come SASS non sarebbe stato di particolare aiuto, e avrebbe inutilmente aggiunto complessità.
 Per il CSS si è utilizzata la libreria \textit{materialize}, mentre per quanto riguarda JavaScript sono stati utilizzati \textit{JQuery} e \textit{JQuery validate} (per effettuare controlli client side sui form compilati dagli utenti).
 
