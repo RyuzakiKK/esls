@@ -140,7 +140,7 @@ Essendo il software dei Raspberry composto da diverse parti tra loro autonome e 
 In questo modo ogni componente logica è un attore e la comunicazione avviene esclusivamente tramite scambio di messaggi.
 
 \subsection{Interfaccia REST}
-Come spiegato in precedenza nell'architettura del sistema (sezione \ref{arch}), i Raspberry devono offrire un'interfaccia REST che permetta di:
+Come spiegato in precedenza nell'architettura del sistema (sezione \ref{arch}), i Raspberry devono offrire un'interfaccia REST (figura \ref{API REST RPI}) che permetta di:
 \begin{itemize}
 	\item ottenere la configurazione attuale di un determinato lampione;
 	\item modificare le policy di accensione e spegnimento;
@@ -148,6 +148,11 @@ Come spiegato in precedenza nell'architettura del sistema (sezione \ref{arch}), 
 	\item permettere di iniziare e concludere una fase di debug per poter fare prove sul funzionamento dei lampioni;
 	\item comunicare ai Raspberry vicini il sopraggiungere di un mezzo sulla carreggiata (comportamento locale ai Raspberry).
 \end{itemize}
+\begin{figure}[ht!]
+	\centering
+	\includegraphics[scale=.62]{figure/Class_Diagram_Rpi_REST.png}
+	\caption{API REST Raspberry \label{API REST RPI}}
+\end{figure}
 
 \subsection{Policy del sistema}
 L'eventuale illuminazione di un lampione è regolata da policy stabilite in maniera centralizzata e modificabili anche mentre il sistema è in esecuzione.
@@ -173,7 +178,7 @@ Come si può notare in figura \ref{FSM CAR}, all'avvio di \textit{Ultrasonic} ve
 Partendo dallo stato \textit{waiting}, se è presente almeno un attore, viene effettuata una lettura di distanza e, se il valore è maggiore della distanza tra il sensore e la larghezza della carreggiata, attende per qualche millisecondo e poi ritorna nello stato \textit{waiting}.
 Se invece il valore è minore della larghezza della carreggiata, significa che è stato rilevato un mezzo in transito e quindi vengono notificati tutti i lampioni attualmente in lista.
 Dopo aver aspettato qualche secondo, ritorna allo stato iniziale \textit{waiting}.
-\begin{figure}[tbp]
+\begin{figure}[ht!]
 	\centering
 	\includegraphics[scale=.75]{figure/Statemachine_Ultrasonic.png}
 	\caption{Finished State Machine riguardante la parte di controllo presenza auto \label{FSM CAR}}
@@ -183,7 +188,7 @@ Utilizzando il diagramma di sequenza in figura \ref{SD CAR}, è stato rappresent
 Inizialmente i lampioni si trovano nello stato di risparmio energetico e viene effettuata una misurazione da parte del sensore di prossimità che restituisce la lettura rappresentata da \textit{d}.
 Successivamente viene eseguita una seconda lettura: questa volta la distanza rilevata si assume equivalga a meno della soglia impostata come necessaria, e quindi che sia stata rilevata un'automobile.
 Per questo vengono notificati entrambi i lampioni, i quali, dopo un intervallo di tempo calcolato tramite la moltiplicazione tra una costante e il proprio identificativo, passano in modalità di piena potenza per permettere all'automobilista di percorrere la strada in sicurezza.
-\begin{figure}[tbp]
+\begin{figure}[ht!]
 	\centering
 	\includegraphics[scale=.59]{figure/Sequence_Diagram_car_spotted.png}
 	\caption{Comunicazione tra il sensore ad ultrasuoni e i lampioni rappresentata tramite un Sequence Diagram \label{SD CAR}}
@@ -197,7 +202,6 @@ Notificare i vicini è necessario per due motivi:
 	\item nel caso si giungesse ad un incrocio, verranno notificati tutti i dispositivi embedded relativi alle strade dell'intersezione.
 \end{itemize}
 
-\newpage
 \subsection{Controllo luminosità ambientale}
 Questa parte si occupa di controllare l'intensità luminosa ambientale e di notificare i lampioni in modo che possano accendersi o spegnersi se il valore di luminosità fosse maggiore o minore di una certa soglia impostata nelle loro policy.
 \paragraph{Architettura}
@@ -264,7 +268,7 @@ Inoltre, in caso di problemi con un'istanza specifica della servlet, solo i Rasp
 \begin{figure}[ht]
 	\centering
 	\includegraphics[scale=.45]{figure/Deployment_Diagram3v2.png}
-	\caption{Diagramma di deployment (server distribuito) \label{DD LAYERED}}
+	\caption{Diagramma di deployment (server distribuito con layer di smistamento) \label{DD LAYERED}}
 \end{figure}
 
 
