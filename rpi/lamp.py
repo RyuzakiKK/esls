@@ -71,7 +71,7 @@ class Lamp(pykka.ThreadingActor):
     def start_schedule_on(self):
         wait_t = self.get_wait(self.lamp_policy_on.time_h, self.lamp_policy_on.time_m, 0,
                                self.lamp_policy_off.time_h, self.lamp_policy_off.time_m, 0)
-        logging.debug("wait = {0}".format(wait_t))
+        logger.debug("wait = {0}".format(wait_t))
         self.timer_on.cancel()
         self.timer_on = threading.Timer(wait_t, self.pr_proxy.add_actor, [self.my_proxy])
         self.timer_on.start()
